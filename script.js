@@ -1,27 +1,35 @@
-// CONFIGURACIÓN DE LA NUBE (Con tu Master Key nueva y tu Bin ID)
+// CONFIGURACIÓN DE LA NUBE (Con tu Bin ID y tu Master Key)
 const BIN_ID = '6aef8371ffd516053afb36b';
 const API_KEY = '$2a$10$6/49wgQinynTNM9gPxM8Pup0wBBrNqXkQae3RgSXnMEvnC6krP2o.';
 
 let dbData = { songs: [], memories: [], media: [] };
 
-// Cargar datos desde la nube
+// Cargar datos desde la nube usando un puente anti-bloqueo
 async function loadFromCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-            headers: { 'X-Master-Key': API_KEY }
+            method: 'GET',
+            headers: {
+                'X-Master-Key': API_KEY,
+                'X-Bin-Meta': 'false'
+            }
         });
-        const result = await response.json();
-        dbData = result.record || { songs: [], memories: [], media: [] };
-        renderEverything();
+        if (response.ok) {
+            const result = await response.json();
+            dbData = result || { songs: [], memories: [], media: [] };
+            renderEverything();
+        } else {
+            console.error("No se pudo cargar de la nube, usando respaldo local.");
+        }
     } catch (e) {
-        console.error("Error al cargar la nube:", e);
+        console.error("Error de conexión:", e);
     }
 }
 
-// Guardar datos en la nube
+// Guardar datos en la nube con el puente de seguridad
 async function saveToCloud() {
     try {
-        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -29,8 +37,11 @@ async function saveToCloud() {
             },
             body: JSON.stringify(dbData)
         });
+        if (!response.ok) {
+            alert('Hubo un pequeño error al sincronizar con la nube.');
+        }
     } catch (e) {
-        console.error("Error al guardar en la nube:", e);
+        console.error("Error al guardar:", e);
     }
 }
 
@@ -116,7 +127,7 @@ function renderMusicModalList() {
     const musicList = document.getElementById('musicModalList');
     if (!musicList) return;
     musicList.innerHTML = '';
-    if (dbData.songs.length === 0) {
+    if (!dbData.songs || dbData.songs.length === 0) {
         musicList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay canciones agregadas aún.</p>';
         return;
     }
@@ -142,7 +153,7 @@ function renderTextsModalList() {
     const memList = document.getElementById('textsModalList');
     if (!memList) return;
     memList.innerHTML = '';
-    if (dbData.memories.length === 0) {
+    if (!dbData.memories || dbData.memories.length === 0) {
         memList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay textos agregados aún.</p>';
         return;
     }
@@ -164,7 +175,7 @@ function initDynamicMedia() {
     if (!slider) return;
     slider.innerHTML = '';
 
-    if (dbData.media.length === 0) {
+    if (!dbData.media || dbData.media.length === 0) {
         slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos o videos para verlos aquí 💗</div></div>`;
         slides = document.querySelectorAll('.slide');
         return;
@@ -213,7 +224,9 @@ async function uploadMediaFile() {
     let type = 'image';
     if (urlVal.match(/\.(mp4|webm|ogg)$/i)) type = 'video';
 
+    if (!dbData.media) dbData.media = [];
     dbData.media.push({ id: Date.now(), url: urlVal, type: type, caption: captionInput || 'Recuerdo especial 💗' });
+    
     await saveToCloud();
     renderEverything();
 
@@ -228,7 +241,9 @@ async function addSong() {
     const url = document.getElementById('songUrl').value;
     if (!title || !url) return alert('Llena el título y el enlace');
     
+    if (!dbData.songs) dbData.songs = [];
     dbData.songs.push({ title, addedBy, url });
+    
     await saveToCloud();
     renderMusicModalList();
 
@@ -248,7 +263,10 @@ async function deleteSong(index) {
 async function addMemory() {
     const text = document.getElementById('memoryText').value;
     if (!text) return alert('Escribe un texto');
+    
+    if (!dbData.memories) dbData.memories = [];
     dbData.memories.push(text);
+    
     await saveToCloud();
     renderTextsModalList();
 
@@ -297,26 +315,26 @@ function openGalleryModal() {
     const grid = document.getElementById('galleryGrid');
     grid.innerHTML = '';
 
-    if (dbData.media.length === 0) {
+    if (!dbData.media || dbData.media.length === 0) {
         grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
-    }
-
-    dbData.media.forEach((item, idx) => {
-        let isVideo = item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i);
-        let thumbHtml = isVideo 
-            ? `<video src="${item.url}" class="gallery-thumb"></video>` 
-            : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
-        
-        grid.innerHTML += `
-            <div class="gallery-card">
-                <button class="gallery-delete-btn" onclick="deleteCustomMedia(event, ${idx})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                <div onclick="openViewer('${item.url}', '${item.type || 'image'}', '${item.caption}', ${idx})">
-                    ${thumbHtml}
-                    <div class="gallery-caption">${item.caption}</div>
+    } else {
+        dbData.media.forEach((item, idx) => {
+            let isVideo = item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i);
+            let thumbHtml = isVideo 
+                ? `<video src="${item.url}" class="gallery-thumb"></video>` 
+                : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
+            
+            grid.innerHTML += `
+                <div class="gallery-card">
+                    <button class="gallery-delete-btn" onclick="deleteCustomMedia(event, ${idx})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    <div onclick="openViewer('${item.url}', '${item.type || 'image'}', '${item.caption}', ${idx})">
+                        ${thumbHtml}
+                        <div class="gallery-caption">${item.caption}</div>
+                    </div>
                 </div>
-            </div>
-        `;
-    });
+            `;
+        });
+    }
 
     modal.classList.remove('hidden');
 }
