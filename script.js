@@ -25,9 +25,8 @@ async function loadFromCloud() {
     }
 }
 
-// Guardar datos en la nube de forma segura y permanente
+// Guardar datos en la nube de forma segura
 async function saveToCloud() {
-    renderEverything();
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',
@@ -85,7 +84,7 @@ function createHeart() {
 }
 setInterval(createHeart, 400);
 
-// Reproductor de Música Embebido + Botón Oficial
+// Reproductor de Música Embebido corregido (sin avisos en consola)
 function getMusicEmbedHtml(url) {
     if (!url) return '';
     let embedHtml = '';
@@ -93,7 +92,7 @@ function getMusicEmbedHtml(url) {
     if (url.includes('spotify.com')) {
         const match = url.match(/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
         if (match) {
-            embedHtml = `<iframe src="https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:12px; margin-top:8px;"></iframe>`;
+            embedHtml = `<iframe src="https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0" width="100%" height="80" style="border:0; border-radius:12px; margin-top:8px;" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
         }
     } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
         let videoId = '';
@@ -105,7 +104,7 @@ function getMusicEmbedHtml(url) {
             videoId = url.split('embed/')[1]?.split('?')[0];
         }
         if (videoId) {
-            embedHtml = `<iframe width="100%" height="80" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px; margin-top:8px;"></iframe>`;
+            embedHtml = `<iframe width="100%" height="80" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" style="border:0; border-radius:12px; margin-top:8px;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
         }
     }
 
@@ -186,7 +185,7 @@ function initDynamicMedia() {
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        if (item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i)) {
+        if (item.type === 'video' || (item.url && item.url.match(/\.(mp4|webm|ogg)$/i))) {
             slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
         } else {
             slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
@@ -215,7 +214,7 @@ function toggleAdminPanel() {
     panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Subida mágica invisible (Seleccionas de tu galería, se procesa de fondo y se guarda para siempre)
+// Subida a Catbox con manejo transparente
 async function uploadMediaFile() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
@@ -229,18 +228,19 @@ async function uploadMediaFile() {
     formData.append('reqtype', 'fileupload');
     formData.append('fileToUpload', file);
 
-    alert('Subiendo recuerdo a la nube... Un segundito 💗');
+    alert('Subiendo recuerdo a la nube... Un momento 💗');
 
     try {
-        // Subida automática e invisible a servidor seguro sin mostrar links
         const response = await fetch('https://catbox.moe/user/api.php', {
             method: 'POST',
             body: formData
         });
 
-        if (!response.ok) throw new Error('Error al subir el archivo');
+        if (!response.ok) throw new Error('Error en el servidor de subida');
 
-        const fileUrl = await response.text();
+        let fileUrl = await response.text();
+        fileUrl = fileUrl.trim();
+
         let type = 'image';
         if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
             type = 'video';
@@ -249,7 +249,7 @@ async function uploadMediaFile() {
         if (!dbData.media) dbData.media = [];
         dbData.media.push({ 
             id: Date.now(), 
-            url: fileUrl.trim(), 
+            url: fileUrl, 
             type: type, 
             caption: captionInput || 'Recuerdo especial 💗' 
         });
@@ -259,10 +259,10 @@ async function uploadMediaFile() {
 
         fileInput.value = '';
         document.getElementById('mediaCaption').value = '';
-        alert('¡Recuerdo guardado con éxito para siempre!');
+        alert('¡Recuerdo guardado con éxito y sincronizado!');
     } catch (e) {
         console.error(e);
-        alert('Hubo un error al subir el archivo. Inténtalo de nuevo.');
+        alert('No se pudo subir el archivo. Inténtalo de nuevo.');
     }
 }
 
