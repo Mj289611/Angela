@@ -5,19 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Nuestro Espacio 💗</title>
     <link rel="stylesheet" href="style.css">
-    <!-- FontAwesome para íconos -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- Contenedor de corazones flotantes -->
     <div id="heartsContainer"></div>
 
     <div class="content">
-        <!-- Título principal -->
         <h1 class="title">Nuestra Historia 💗</h1>
 
-        <!-- Contador de tiempo -->
         <div class="counter-card">
             <h2>Llevamos juntos:</h2>
             <div class="counter-grid">
@@ -30,14 +26,12 @@
             </div>
         </div>
 
-        <!-- Carrusel principal de fotos -->
         <div class="slider-container" id="mainSlider">
             <div class="slide active">
                 <div class="empty-slide">Sube fotos desde tu cel para verlas aquí 💗</div>
             </div>
         </div>
 
-        <!-- Botones de menú principal -->
         <div class="menu-grid">
             <button class="menu-btn" onclick="openMusicModal()">
                 <i class="fa-solid fa-music"></i> Música
@@ -53,7 +47,6 @@
             </button>
         </div>
 
-        <!-- Panel Admin oculto por defecto para subir cosas -->
         <div id="adminPanel" class="admin-panel hidden">
             <h3>Panel de Control ⚙️</h3>
             
@@ -80,7 +73,6 @@
         </div>
     </div>
 
-    <!-- Modal de Música -->
     <div id="musicModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn" onclick="closeMusicModal()">&times;</span>
@@ -89,7 +81,6 @@
         </div>
     </div>
 
-    <!-- Modal de Textos -->
     <div id="textsModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn" onclick="closeTextsModal()">&times;</span>
@@ -98,7 +89,6 @@
         </div>
     </div>
 
-    <!-- Modal de Galería -->
     <div id="galleryModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn" onclick="closeGalleryModal()">&times;</span>
@@ -107,7 +97,6 @@
         </div>
     </div>
 
-    <!-- Visor de Foto Ampliada -->
     <div id="viewerModal" class="modal hidden">
         <div class="modal-content viewer-content">
             <span class="close-btn" onclick="closeViewerModal()">&times;</span>
@@ -117,7 +106,6 @@
         </div>
     </div>
 
-    <!-- IMPORTANTE: type="module" permite que Firebase funcione directo desde el JS -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
