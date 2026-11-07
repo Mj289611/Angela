@@ -2,9 +2,10 @@
 const BIN_ID = '6aef8cebac6210605a760ed9';
 const API_KEY = '$2a$10$xHfX7upHfmUF69uILZpbqu5B.RSSjsnZj2goZ3GamhiOHLuKa/MUG';
 
-let dbData = { songs: [], memories: [], media: [] };
+// Estado inicial: intentamos cargar del respaldo local del navegador primero para que nunca aparezca vacío
+let dbData = JSON.parse(localStorage.getItem('myProjectData')) || { songs: [], memories: [], media: [] };
 
-// Cargar datos desde la nube (JSONBin v3 Público)
+// Cargar datos desde la nube y fusionar con local
 async function loadFromCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
@@ -15,18 +16,27 @@ async function loadFromCloud() {
         });
         if (response.ok) {
             const result = await response.json();
-            dbData = result.record || { songs: [], memories: [], media: [] };
+            if (result.record && (result.record.media?.length > 0 || result.record.songs?.length > 0 || result.record.memories?.length > 0)) {
+                dbData = result.record;
+                localStorage.setItem('myProjectData', JSON.stringify(dbData));
+            }
             renderEverything();
         } else {
-            console.error("Error al cargar la nube, código:", response.status);
+            console.error("Error al cargar la nube, usando respaldo local:", response.status);
+            renderEverything();
         }
     } catch (e) {
-        console.error("Error de red al cargar:", e);
+        console.error("Error de red al cargar, usando respaldo local:", e);
+        renderEverything();
     }
 }
 
-// Guardar datos en la nube (JSONBin v3 Público)
+// Guardar datos en la nube y en el respaldo local del navegador
 async function saveToCloud() {
+    // Guardar inmediatamente en local para blindar contra cualquier recarga
+    localStorage.setItem('myProjectData', JSON.stringify(dbData));
+    renderEverything();
+
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',
@@ -40,7 +50,7 @@ async function saveToCloud() {
             console.error("Error al guardar en la nube, código:", response.status);
         }
     } catch (e) {
-        console.error("Error de red al guardar:", e);
+        console.error("Error de red al guardar en la nube:", e);
     }
 }
 
@@ -229,7 +239,6 @@ async function uploadMediaFile() {
         type = 'video';
     }
 
-    // Si es video, lo leemos directo; si es imagen, la comprimimos primero
     if (type === 'video') {
         const reader = new FileReader();
         reader.onload = async function(event) {
@@ -244,7 +253,7 @@ async function uploadMediaFile() {
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-                const maxWidth = 900; // Ancho máximo optimizado para web
+                const maxWidth = 900;
 
                 if (width > maxWidth) {
                     height = Math.round((height * maxWidth) / width);
@@ -256,7 +265,6 @@ async function uploadMediaFile() {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                // Comprimir calidad a 0.75 para que pese poco y suba al instante
                 const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
                 await saveMediaToDb(compressedDataUrl, 'image', captionInput, fileInput);
             };
@@ -266,4 +274,172 @@ async function uploadMediaFile() {
     }
 }
 
-async function saveMediaToDb(
+async function saveMediaToDb(urlData, type, caption, fileInput) {
+    if (!dbData.media) dbData.media = [];
+    dbData.media.push({ 
+        id: Date.now(), 
+        url: urlData, 
+        type: type, 
+        caption: caption || 'Recuerdo especial 💗' 
+    });
+    
+    await saveToCloud();
+    renderEverything();
+
+    fileInput.value = '';
+    document.getElementById('mediaCaption').value = '';
+    alert('¡Foto/Video comprimido y guardado con éxito!');
+}
+
+async function addSong() {
+    const title = document.getElementById('songTitle').value;
+    const addedBy = document.getElementById('songAddedBy').value || 'Amor';
+    const url = document.getElementById('songUrl').value;
+    if (!title || !url) return alert('Llena el título y el enlace');
+    
+    if (!dbData.songs) dbData.songs = [];
+    dbData.songs.push({ title, addedBy, url });
+    
+    await saveToCloud();
+    renderMusicModalList();
+
+    document.getElementById('songTitle').value = '';
+    document.getElementById('songUrl').value = '';
+    alert('¡Canción guardada con éxito!');
+}
+
+async function deleteSong(index) {
+    if (confirm('¿Seguro que deseas eliminar esta canción?')) {
+        dbData.songs.splice(index, 1);
+        await saveToCloud();
+        renderMusicModalList();
+    }
+}
+
+async function addMemory() {
+    const text = document.getElementById('memoryText').value;
+    if (!text) return alert('Escribe un texto');
+    
+    if (!dbData.memories) dbData.memories = [];
+    dbData.memories.push(text);
+    
+    await saveToCloud();
+    renderTextsModalList();
+
+    document.getElementById('memoryText').value = '';
+    alert('¡Texto guardado con éxito!');
+}
+
+async function editMemory(index) {
+    const newText = prompt('Edita el texto del momento:', dbData.memories[index]);
+    if (newText !== null && newText.trim() !== '') {
+        dbData.memories[index] = newText.trim();
+        await saveToCloud();
+        renderTextsModalList();
+    }
+}
+
+async function deleteMemory(index) {
+    if (confirm('¿Seguro que deseas eliminar este momento?')) {
+        dbData.memories.splice(index, 1);
+        await saveToCloud();
+        renderTextsModalList();
+    }
+}
+
+// Modales
+function openMusicModal() {
+    renderMusicModalList();
+    document.getElementById('musicModal').classList.remove('hidden');
+}
+function closeMusicModal() {
+    document.getElementById('musicModal').classList.add('hidden');
+}
+
+function openTextsModal() {
+    renderTextsModalList();
+    document.getElementById('textsModal').classList.remove('hidden');
+}
+function closeTextsModal() {
+    document.getElementById('textsModal').classList.add('hidden');
+}
+
+let activeCustomIndex = null;
+
+function openGalleryModal() {
+    const modal = document.getElementById('galleryModal');
+    const grid = document.getElementById('galleryGrid');
+    grid.innerHTML = '';
+
+    if (!dbData.media || dbData.media.length === 0) {
+        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
+    } else {
+        dbData.media.forEach((item, idx) => {
+            let isVideo = item.type === 'video' || (item.url && item.url.startsWith('data:video'));
+            let thumbHtml = isVideo 
+                ? `<video src="${item.url}" class="gallery-thumb"></video>` 
+                : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
+            
+            grid.innerHTML += `
+                <div class="gallery-card">
+                    <button class="gallery-delete-btn" onclick="deleteCustomMedia(event, ${idx})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    <div onclick="openViewer('${item.url}', '${item.type || 'image'}', '${item.caption}', ${idx})">
+                        ${thumbHtml}
+                        <div class="gallery-caption">${item.caption}</div>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    modal.classList.remove('hidden');
+}
+
+function closeGalleryModal() {
+    document.getElementById('galleryModal').classList.add('hidden');
+}
+
+async function deleteCustomMedia(event, index) {
+    event.stopPropagation();
+    if (confirm('¿Deseas eliminar este archivo de la galería?')) {
+        dbData.media.splice(index, 1);
+        await saveToCloud();
+        initDynamicMedia();
+        openGalleryModal();
+    }
+}
+
+function openViewer(url, type, caption, customIndex) {
+    activeCustomIndex = customIndex;
+    const viewerModal = document.getElementById('viewerModal');
+    const container = document.getElementById('viewerContainer');
+    const captionEl = document.getElementById('viewerCaptionText');
+    
+    container.innerHTML = '';
+    if (type === 'video' || (url && url.startsWith('data:video'))) {
+        container.innerHTML = `<video src="${url}" controls autoplay></video>`;
+    } else {
+        container.innerHTML = `<img src="${url}" alt="Ampliada">`;
+    }
+    captionEl.innerText = caption;
+    viewerModal.classList.remove('hidden');
+}
+
+function closeViewerModal() {
+    document.getElementById('viewerModal').classList.add('hidden');
+}
+
+async function enableEditCaption() {
+    if (activeCustomIndex === null) return;
+    const currentCap = dbData.media[activeCustomIndex].caption;
+    const newCap = prompt('Editar texto de la foto/video:', currentCap);
+    if (newCap !== null && newCap.trim() !== '') {
+        dbData.media[activeCustomIndex].caption = newCap.trim();
+        await saveToCloud();
+        document.getElementById('viewerCaptionText').innerText = newCap.trim();
+        openGalleryModal();
+    }
+}
+
+// Cargar todo al abrir la página
+loadFromCloud();
