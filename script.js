@@ -30,37 +30,6 @@ let dbData = {
 
 const DOC_ID = "mainData";
 
-// Control de Música de Fondo (M.A.I.)
-let isMusicPlaying = false;
-const bgAudio = document.getElementById('bgAudio');
-const musicIcon = document.getElementById('musicIcon');
-
-// Reproducir al primer toque en cualquier parte de la pantalla
-document.body.addEventListener('click', function initAudioOnTouch() {
-    if (!isMusicPlaying && bgAudio) {
-        bgAudio.volume = 0.4;
-        bgAudio.play().then(() => {
-            isMusicPlaying = true;
-            if (musicIcon) musicIcon.className = "fa-solid fa-volume-high";
-        }).catch(e => console.log("Audio en espera de interacción", e));
-        
-        document.body.removeEventListener('click', initAudioOnTouch);
-    }
-}, { once: true });
-
-function toggleBgMusic() {
-    if (!bgAudio) return;
-    if (isMusicPlaying) {
-        bgAudio.pause();
-        isMusicPlaying = false;
-        if (musicIcon) musicIcon.className = "fa-solid fa-volume-xmark";
-    } else {
-        bgAudio.play();
-        isMusicPlaying = true;
-        if (musicIcon) musicIcon.className = "fa-solid fa-volume-high";
-    }
-}
-
 // Sincronización en tiempo real
 function initRealtimeSync() {
     db.collection("appData").doc(DOC_ID).onSnapshot((docSnap) => {
