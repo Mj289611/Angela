@@ -1,4 +1,4 @@
-// Configuración oficial de tu Firebase
+// Configuración oficial de Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyCMuz81GDT4EJKrGHYIfNQAz0y58xtauuQ",
     authDomain: "fotos-7897e.firebaseapp.com",
@@ -13,7 +13,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Tus datos recuperados (Canciones, nota especial y multimedia vacía para empezar)
+// Datos iniciales
 let dbData = {
     songs: [
         { title: "M.A.I", addedBy: "Niño", url: "https://open.spotify.com/track/35ttE4t8lQZA2vuCYDg4G7?si=Jw2UOhB9Tx6jE1yuF3FhCw&utm_source=copy-link" },
@@ -30,7 +30,38 @@ let dbData = {
 
 const DOC_ID = "mainData";
 
-// Sincronización en tiempo real con Firestore
+// Control de Música de Fondo (M.A.I.)
+let isMusicPlaying = false;
+const bgAudio = document.getElementById('bgAudio');
+const musicIcon = document.getElementById('musicIcon');
+
+// Reproducir al primer toque en cualquier parte de la pantalla
+document.body.addEventListener('click', function initAudioOnTouch() {
+    if (!isMusicPlaying && bgAudio) {
+        bgAudio.volume = 0.4;
+        bgAudio.play().then(() => {
+            isMusicPlaying = true;
+            if (musicIcon) musicIcon.className = "fa-solid fa-volume-high";
+        }).catch(e => console.log("Audio en espera de interacción", e));
+        
+        document.body.removeEventListener('click', initAudioOnTouch);
+    }
+}, { once: true });
+
+function toggleBgMusic() {
+    if (!bgAudio) return;
+    if (isMusicPlaying) {
+        bgAudio.pause();
+        isMusicPlaying = false;
+        if (musicIcon) musicIcon.className = "fa-solid fa-volume-xmark";
+    } else {
+        bgAudio.play();
+        isMusicPlaying = true;
+        if (musicIcon) musicIcon.className = "fa-solid fa-volume-high";
+    }
+}
+
+// Sincronización en tiempo real
 function initRealtimeSync() {
     db.collection("appData").doc(DOC_ID).onSnapshot((docSnap) => {
         if (docSnap.exists) {
@@ -53,7 +84,7 @@ async function saveToCloud() {
     }
 }
 
-// 1. Contador de tiempo exacto
+// Contador de tiempo
 const startDate = new Date('2026-04-18T00:00:00');
 
 function updateCounter() {
@@ -86,21 +117,37 @@ function updateCounter() {
 setInterval(updateCounter, 1000);
 updateCounter();
 
-// 2. Corazones flotantes
-function createHeart() {
+// Animaciones de conejitos y corazones flotantes
+function createFloatingElements() {
     const container = document.getElementById('heartsContainer');
     if (!container) return;
-    const heart = document.createElement('div');
-    heart.classList.add('heart');
-    heart.innerText = '💗';
-    heart.style.left = Math.random() * 100 + 'vw';
-    heart.style.animationDuration = (Math.random() * 3 + 4) + 's';
-    container.appendChild(heart);
-    setTimeout(() => heart.remove(), 6000);
-}
-setInterval(createHeart, 400);
 
-// Reproductor de Música Embebido
+    const symbols = ['💗', '🐰', '✨', '💖', '🐰', '🌸', '🤍'];
+    const element = document.createElement('div');
+    const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+    
+    if (randomSymbol === '🐰') {
+        element.classList.add('floating-bunny');
+    } else if (randomSymbol === '✨') {
+        element.classList.add('sparkle');
+    } else {
+        element.classList.add('heart');
+    }
+
+    element.innerText = randomSymbol;
+    element.style.left = Math.random() * 100 + 'vw';
+    element.style.animationDuration = (Math.random() * 4 + 5) + 's';
+    element.style.fontSize = (Math.random() * 0.8 + 1) + 'rem';
+    
+    container.appendChild(element);
+
+    setTimeout(() => {
+        element.remove();
+    }, 9000);
+}
+setInterval(createFloatingElements, 400);
+
+// Reproductor de Música Embebido (Modales)
 function getMusicEmbedHtml(url) {
     if (!url) return '';
     let embedHtml = '';
@@ -191,7 +238,7 @@ function initDynamicMedia() {
     slider.innerHTML = '';
 
     if (!dbData.media || dbData.media.length === 0) {
-        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos o videos para verlos aquí 💗</div></div>`;
+        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos para verlas aquí 💗</div></div>`;
         slides = document.querySelectorAll('.slide');
         return;
     }
@@ -201,17 +248,13 @@ function initDynamicMedia() {
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        if (item.type === 'video') {
-            slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;"></video>`;
-        } else {
-            slide.innerHTML = `<img src="${item.url}" alt="Recuerdo" style="width:100%; height:100%; object-fit:cover;">`;
-        }
+        slide.innerHTML = `<img src="${item.url}" alt="Recuerdo" style="width:100%; height:100%; object-fit:cover;">`;
         slider.appendChild(slide);
     });
     slides = document.querySelectorAll('.slide');
 }
 
-// Carrusel Aleatorio
+// Carrusel aleatorio
 let slides = document.querySelectorAll('.slide');
 let currentSlide = 0;
 
@@ -232,74 +275,56 @@ function toggleAdminPanel() {
     }
 }
 
-// Subida de Multimedia con compresión optimizada para Firestore
+// Subida de Fotos optimizada
 async function uploadMediaFile() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
 
     if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
-        return alert('Por favor selecciona una foto o video de tu galería.');
+        return alert('Por favor selecciona una foto de tu galería.');
     }
 
     const file = fileInput.files[0];
     alert('Optimizando recuerdo y sincronizando con la nube... 💗');
 
-    if (file.type.startsWith('video')) {
-        const reader = new FileReader();
-        reader.onload = async function(event) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxWidth = 450;
+
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.50);
+
             if (!dbData.media) dbData.media = [];
-            dbData.media.push({
-                id: Date.now(),
-                url: event.target.result,
-                type: 'video',
-                caption: captionInput || 'Recuerdo especial 💗'
+            dbData.media.push({ 
+                id: Date.now(), 
+                url: compressedDataUrl, 
+                type: 'image', 
+                caption: captionInput || 'Recuerdo especial 💗' 
             });
+            
             await saveToCloud();
+
             fileInput.value = '';
             document.getElementById('mediaCaption').value = '';
-            alert('¡Video subido y sincronizado con éxito!');
+            alert('¡Foto guardada y sincronizada con éxito!');
         };
-        reader.readAsDataURL(file);
-    } else {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = async function() {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                const maxWidth = 450;
-
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.50);
-
-                if (!dbData.media) dbData.media = [];
-                dbData.media.push({ 
-                    id: Date.now(), 
-                    url: compressedDataUrl, 
-                    type: 'image', 
-                    caption: captionInput || 'Recuerdo especial 💗' 
-                });
-                
-                await saveToCloud();
-
-                fileInput.value = '';
-                document.getElementById('mediaCaption').value = '';
-                alert('¡Foto guardada y sincronizada con éxito!');
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
 }
 
 async function addSong() {
@@ -377,18 +402,14 @@ function openGalleryModal() {
     grid.innerHTML = '';
 
     if (!dbData.media || dbData.media.length === 0) {
-        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
+        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos subidas todavía.</p>';
     } else {
         dbData.media.forEach((item, idx) => {
-            let thumbContent = item.type === 'video' 
-                ? `<video src="${item.url}" style="width:100%; height:120px; object-fit:cover; border-radius:8px;"></video>` 
-                : `<img src="${item.url}" class="gallery-thumb" alt="Subida" style="width:100%; height:120px; object-fit:cover; border-radius:8px;">`;
-            
             grid.innerHTML += `
                 <div class="gallery-card" style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 10px; position: relative;">
                     <button onclick="deleteCustomMedia(event, ${idx})" title="Eliminar" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6); border: none; color: #ff6b6b; padding: 6px; border-radius: 50%; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
-                    <div onclick="openViewer('${item.url}', '${item.type || 'image'}', '${item.caption}', ${idx})" style="cursor: pointer;">
-                        ${thumbContent}
+                    <div onclick="openViewer('${item.url}', 'image', '${item.caption}', ${idx})" style="cursor: pointer;">
+                        <img src="${item.url}" class="gallery-thumb" alt="Subida" style="width:100%; height:120px; object-fit:cover; border-radius:8px;">
                         <div class="gallery-caption" style="font-size: 0.8rem; margin-top: 6px; color: #fff; text-align: center;">${item.caption}</div>
                     </div>
                 </div>
@@ -405,7 +426,7 @@ function closeGalleryModal() {
 
 async function deleteCustomMedia(event, index) {
     if (event) event.stopPropagation();
-    if (confirm('¿Deseas eliminar este recuerdo de la galería?')) {
+    if (confirm('¿Deseas eliminar esta foto de la galería?')) {
         dbData.media.splice(index, 1);
         await saveToCloud();
         openGalleryModal();
@@ -418,12 +439,7 @@ function openViewer(url, type, caption, customIndex) {
     const container = document.getElementById('viewerContainer');
     const captionEl = document.getElementById('viewerCaptionText');
     
-    container.innerHTML = '';
-    if (type === 'video') {
-        container.innerHTML = `<video src="${url}" controls autoplay style="width:100%; max-height:60vh; border-radius:10px;"></video>`;
-    } else {
-        container.innerHTML = `<img src="${url}" alt="Ampliada" style="width:100%; max-height:60vh; object-fit:contain; border-radius:10px;">`;
-    }
+    container.innerHTML = `<img src="${url}" alt="Ampliada" style="width:100%; max-height:60vh; object-fit:contain; border-radius:10px;">`;
     if (captionEl) captionEl.innerText = caption;
     viewerModal.classList.remove('hidden');
 }
