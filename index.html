@@ -18,7 +18,7 @@
         <h1>Mami & Su Niño</h1>
         <p class="sub-date">DESDE EL 18 DE ABRIL DE 2026</p>
 
-        <!-- Carrusel Principal Aleatorio (Formato 9:16 adaptado) -->
+        <!-- Carrusel Principal Aleatorio -->
         <div class="slider-container" id="mainSlider">
             <div class="slide active"><img src="img/foto.jpg" alt="Foto"></div>
             <div class="slide"><img src="img/foto2.jpg" alt="Foto 2"></div>
@@ -45,13 +45,16 @@
             </div>
         </div>
 
-        <!-- APARTADO 1: MÚSICA -->
+        <!-- APARTADO 1: MÚSICA (Con botón de administrar) -->
         <div class="section-card">
             <div class="counter-title" style="font-size: 1.8rem;">Nuestra Música 🎵</div>
-            <div id="musicListContainer"></div>
+            <button class="action-btn" onclick="toggleAdminPanel('music')">
+                <i class="fa-solid fa-music"></i> Ver y Administrar Música
+            </button>
+            <div id="musicListContainer" style="margin-top: 15px;"></div>
         </div>
 
-        <!-- APARTADO 2: FOTOS Y VIDEOS (Galería Interactiva con opción de eliminar) -->
+        <!-- APARTADO 2: FOTOS Y VIDEOS (Galería) -->
         <div class="section-card">
             <div class="counter-title" style="font-size: 1.8rem;">Galería de Fotos y Videos 📸</div>
             <button class="action-btn" onclick="openGalleryModal()">
@@ -59,10 +62,13 @@
             </button>
         </div>
 
-        <!-- APARTADO 3: MOMENTOS Y TEXTOS (Editable y con eliminar) -->
+        <!-- APARTADO 3: MOMENTOS Y TEXTOS (Con botón de administrar) -->
         <div class="section-card">
             <div class="counter-title" style="font-size: 1.8rem;">Nuestros Detalles y Textos ✨</div>
-            <div id="memoriesListContainer"></div>
+            <button class="action-btn" onclick="toggleAdminPanel('memories')">
+                <i class="fa-solid fa-pen-fancy"></i> Ver y Administrar Textos
+            </button>
+            <div id="memoriesListContainer" style="margin-top: 15px;"></div>
         </div>
 
         <!-- CARTA DE AMOR ORIGINAL -->
@@ -72,18 +78,14 @@
             <p>Eres lo mejor de este mundo, tu niño hemosho sabe muy bien eso, estoy loco x ti de amor, te amo musho pero musho mamii, recuerda que con solo estar a mi lado me ayudas musho, imaginate con amarme, escucharme, amarme como soy, ser tu niño y tu mi mami, y ser mi lugar seguro me hace muy feliz 🥺💗</p>
         </div>
 
-        <!-- PANEL DE ADMINISTRACIÓN -->
-        <button class="toggle-admin-btn" onclick="toggleAdminPanel()">
-            <i class="fa-solid fa-wand-magic-sparkles"></i> Agregar Contenido (Multimedia / Música / Textos)
-        </button>
-
+        <!-- PANEL DE ADMINISTRACIÓN GENERAL -->
         <div id="adminPanel" class="admin-panel hidden">
             <h3>Panel de Contribución 💖</h3>
             
             <div class="admin-block">
-                <h4><i class="fa-solid fa-photo-film"></i> Subir Foto o Video (9:16)</h4>
+                <h4><i class="fa-solid fa-photo-film"></i> Subir Foto o Video</h4>
                 <input type="file" id="mediaInput" accept="image/*,video/*">
-                <input type="text" id="mediaCaption" placeholder="Escribe un texto o dedicatoria para este archivo...">
+                <input type="text" id="mediaCaption" placeholder="Escribe un texto o dedicatoria...">
                 <button onclick="uploadMediaFile()"><i class="fa-solid fa-upload"></i> Guardar en Galería</button>
             </div>
 
@@ -103,7 +105,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE GALERÍA COMPLETA (Con botón de borrar en cada foto/video subido) -->
+    <!-- MODAL DE GALERÍA COMPLETA (Con fotos y videos predeterminados y subidos) -->
     <div id="galleryModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn" onclick="closeGalleryModal()">&times;</span>
@@ -112,7 +114,7 @@
         </div>
     </div>
 
-    <!-- MODAL DE VISOR INDIVIDUAL (Con edición de texto integrada) -->
+    <!-- MODAL DE VISOR INDIVIDUAL -->
     <div id="viewerModal" class="modal hidden">
         <div class="modal-content viewer-content">
             <span class="close-btn" onclick="closeViewerModal()">&times;</span>
