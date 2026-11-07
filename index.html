@@ -18,7 +18,7 @@
         <h1>Mami & Su Niño</h1>
         <p class="sub-date">DESDE EL 18 DE ABRIL DE 2026</p>
 
-        <!-- Carrusel Principal (Aleatorio con lo que suban) -->
+        <!-- Carrusel Principal (Aleatorio sincronizado con la nube) -->
         <div class="slider-container" id="mainSlider">
             <div class="slide active"><div class="empty-slide">Sube fotos o videos para verlos aquí 💗</div></div>
         </div>
@@ -66,14 +66,13 @@
         </button>
 
         <div id="adminPanel" class="admin-panel hidden">
-            <h3>Panel de Contribución 💖</h3>
+            <h3>Panel de Contribución en la Nube 💖</h3>
             
             <div class="admin-block">
-                <h4><i class="fa-solid fa-photo-film"></i> Subir Foto o Video (Archivo o Enlace URL)</h4>
-                <input type="file" id="mediaInput" accept="image/*,video/*" style="margin-bottom: 8px;">
-                <input type="text" id="mediaUrlInput" placeholder="O pega un enlace URL directo de imagen/video..." style="margin-bottom: 8px;">
+                <h4><i class="fa-solid fa-photo-film"></i> Subir Foto o Video (Enlace URL directo)</h4>
+                <input type="text" id="mediaUrlInput" placeholder="Pega el enlace URL directo de la imagen o video..." style="margin-bottom: 8px;">
                 <input type="text" id="mediaCaption" placeholder="Dedicatoria o texto para este archivo...">
-                <button onclick="uploadMediaFile()"><i class="fa-solid fa-upload"></i> Guardar en Galería</button>
+                <button onclick="uploadMediaFile()"><i class="fa-solid fa-upload"></i> Guardar en la Nube</button>
             </div>
 
             <div class="admin-block">
