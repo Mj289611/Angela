@@ -1,7 +1,4 @@
-// CONFIGURACIÓN OFICIAL DE FIREBASE
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
+// Configuración oficial de tu Firebase
 const firebaseConfig = {
     apiKey: "AIzaSyCMuz81GDT4EJKrGHYIfNQAz0y58xtauuQ",
     authDomain: "fotos-7897e.firebaseapp.com",
@@ -13,37 +10,17 @@ const firebaseConfig = {
 };
 
 // Inicializar Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-// DATOS INICIALES RECUPERADOS (Canciones y nota especial)
-const defaultData = {
+// Tus datos recuperados (Canciones, nota especial y multimedia vacía para empezar)
+let dbData = {
     songs: [
-        {
-            title: "M.A.I ",
-            addedBy: "Niño",
-            url: "https://open.spotify.com/track/35ttE4t8lQZA2vuCYDg4G7?si=Jw2UOhB9Tx6jE1yuF3FhCw&utm_source=copy-link"
-        },
-        {
-            title: "Enamorado tuyo",
-            addedBy: "Niño",
-            url: "https://open.spotify.com/track/35LdDKNMwvKftENaj1WIwF?si=FFVhpwSzTXG-jPfCoY93hg&utm_source=copy-link "
-        },
-        {
-            title: "Por ti",
-            addedBy: "Niño",
-            url: "https://open.spotify.com/track/3lnaMCNOqHZHzUYdHP6TxA?si=UrZZBqMCSZOLHde_2gaGOA&utm_source=copy-link"
-        },
-        {
-            title: "Vamonos a marte ",
-            addedBy: "Niño ",
-            url: "https://open.spotify.com/track/1qBdJHxR2qY0dFad0ZI8sj?si=aoUBCJ6mRPGyut4228HbjQ&utm_source=copy-link"
-        },
-        {
-            title: "Querer querernos ",
-            addedBy: "Niño ",
-            url: "https://open.spotify.com/track/1pzmfNz1I4kgkcKZTPbKGE?si=q92UtGJFROepYjp8tXqPow&utm_source=copy-link "
-        }
+        { title: "M.A.I", addedBy: "Niño", url: "https://open.spotify.com/track/35ttE4t8lQZA2vuCYDg4G7?si=Jw2UOhB9Tx6jE1yuF3FhCw&utm_source=copy-link" },
+        { title: "Enamorado tuyo", addedBy: "Niño", url: "https://open.spotify.com/track/35LdDKNMwvKftENaj1WIwF?si=FFVhpwSzTXG-jPfCoY93hg&utm_source=copy-link" },
+        { title: "Por ti", addedBy: "Niño", url: "https://open.spotify.com/track/3lnaMCNOqHZHzUYdHP6TxA?si=UrZZBqMCSZOLHde_2gaGOA&utm_source=copy-link" },
+        { title: "Vamonos a marte", addedBy: "Niño", url: "https://open.spotify.com/track/1qBdJHxR2qY0dFad0ZI8sj?si=aoUBCJ6mRPGyut4228HbjQ&utm_source=copy-link" },
+        { title: "Querer querernos", addedBy: "Niño", url: "https://open.spotify.com/track/1pzmfNz1I4kgkcKZTPbKGE?si=q92UtGJFROepYjp8tXqPow&utm_source=copy-link" }
     ],
     memories: [
         "Mami, siempfe te amare, me doy cuenta que te amo cada día, en cada momento del día pienso en ti, duermo y sueño contigo, te necesito musho, eres mi lugar seguro, eres mi mami, quien cura mi corazón, grachas por tu amor, grachas x amarme cada día mami, eres y seras siempre lo mejor que me ha pasado en esta vida mami, eres hermosha, me encantan tus cachetitos, me encanta y enamora que seas tikitita, amo como te ves enojada, cuando me haces caritas, es lo mejor, me hace feliz eso de ti, con tu amor y estando a mi lado puedes transformarme, me haces feliz, cada parte de ti me ayuda a mejorar, sin ti no sería lo que soy, no lograría der mejor, me ayudas musho mami, eres lo mejor de este mundo, tu niño hemosho sabe muy bien eso, estoy loco x ti de amor, te amo musho pero musho mamii🥺💗"
@@ -51,30 +28,28 @@ const defaultData = {
     media: []
 };
 
-let dbData = defaultData;
 const DOC_ID = "mainData";
 
-// Sincronización en Tiempo Real con Firestore
+// Sincronización en tiempo real con Firestore
 function initRealtimeSync() {
-    onSnapshot(doc(db, "appData", DOC_ID), (docSnap) => {
-        if (docSnap.exists()) {
+    db.collection("appData").doc(DOC_ID).onSnapshot((docSnap) => {
+        if (docSnap.exists) {
             dbData = docSnap.data();
             renderEverything();
         } else {
             saveToCloud();
         }
     }, (error) => {
-        console.error("Error en tiempo real:", error);
+        console.error("Error sincronizando:", error);
     });
 }
 
-// Guardar datos en Firestore
 async function saveToCloud() {
     try {
-        await setDoc(doc(db, "appData", DOC_ID), dbData);
+        await db.collection("appData").doc(DOC_ID).set(dbData);
         renderEverything();
     } catch (e) {
-        console.error("Error guardando en la nube:", e);
+        console.error("Error guardando:", e);
     }
 }
 
@@ -94,12 +69,19 @@ function updateCounter() {
     const months = Math.floor((daysTotal % 365) / 30);
     const days = Math.floor((daysTotal % 365) % 30);
 
-    document.getElementById('years').innerText = years;
-    document.getElementById('months').innerText = months;
-    document.getElementById('days').innerText = days;
-    document.getElementById('hours').innerText = hours;
-    document.getElementById('minutes').innerText = minutes;
-    document.getElementById('seconds').innerText = seconds;
+    const elYears = document.getElementById('years');
+    const elMonths = document.getElementById('months');
+    const elDays = document.getElementById('days');
+    const elHours = document.getElementById('hours');
+    const elMinutes = document.getElementById('minutes');
+    const elSeconds = document.getElementById('seconds');
+
+    if (elYears) elYears.innerText = years;
+    if (elMonths) elMonths.innerText = months;
+    if (elDays) elDays.innerText = days;
+    if (elHours) elHours.innerText = hours;
+    if (elMinutes) elMinutes.innerText = minutes;
+    if (elSeconds) elSeconds.innerText = seconds;
 }
 setInterval(updateCounter, 1000);
 updateCounter();
@@ -166,26 +148,19 @@ function renderMusicModalList() {
     }
     dbData.songs.forEach((song, index) => {
         musicList.innerHTML += `
-            <div class="music-card">
-                <div class="music-info">
+            <div class="music-card" style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-bottom: 10px;">
+                <div class="music-info" style="display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <b>${song.title}</b>
+                        <b style="color: #fff;">${song.title}</b>
                         <span style="display: block; font-size: 0.75rem; color: #ffb3c1;">Agregado por: ${song.addedBy}</span>
                     </div>
-                    <button class="delete-btn" data-index="${index}"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="deleteSong(${index})" style="background: transparent; border: none; color: #ff6b6b; cursor: pointer; font-size: 1rem;"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div style="width: 100%;">
                     ${getMusicEmbedHtml(song.url)}
                 </div>
             </div>
         `;
-    });
-
-    document.querySelectorAll('.music-card .delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const idx = e.currentTarget.getAttribute('data-index');
-            deleteSong(parseInt(idx));
-        });
     });
 }
 
@@ -199,28 +174,14 @@ function renderTextsModalList() {
     }
     dbData.memories.forEach((mem, index) => {
         memList.innerHTML += `
-            <div class="memory-item">
-                <span style="width: 80%; text-align: left;">${mem}</span>
+            <div class="memory-item" style="background: rgba(255,255,255,0.05); padding: 12px; border-radius: 10px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                <span style="width: 80%; text-align: left; color: #fff; font-size: 0.9rem;">${mem}</span>
                 <div>
-                    <button class="edit-btn" data-index="${index}" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                    <button class="delete-btn" data-index="${index}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    <button onclick="editMemory(${index})" title="Editar" style="background: transparent; border: none; color: #ffd166; cursor: pointer; margin-right: 8px;"><i class="fa-solid fa-pen"></i></button>
+                    <button onclick="deleteMemory(${index})" title="Eliminar" style="background: transparent; border: none; color: #ff6b6b; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>
         `;
-    });
-
-    document.querySelectorAll('.memory-item .edit-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const idx = e.currentTarget.getAttribute('data-index');
-            editMemory(parseInt(idx));
-        });
-    });
-
-    document.querySelectorAll('.memory-item .delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const idx = e.currentTarget.getAttribute('data-index');
-            deleteMemory(parseInt(idx));
-        });
     });
 }
 
@@ -230,7 +191,7 @@ function initDynamicMedia() {
     slider.innerHTML = '';
 
     if (!dbData.media || dbData.media.length === 0) {
-        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos desde tu cel para verlas aquí 💗</div></div>`;
+        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos o videos para verlos aquí 💗</div></div>`;
         slides = document.querySelectorAll('.slide');
         return;
     }
@@ -240,7 +201,11 @@ function initDynamicMedia() {
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
+        if (item.type === 'video') {
+            slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline style="width:100%; height:100%; object-fit:cover;"></video>`;
+        } else {
+            slide.innerHTML = `<img src="${item.url}" alt="Recuerdo" style="width:100%; height:100%; object-fit:cover;">`;
+        }
         slider.appendChild(slide);
     });
     slides = document.querySelectorAll('.slide');
@@ -252,79 +217,94 @@ let currentSlide = 0;
 
 function nextSlide() {
     if (slides.length <= 1) return;
-    slides[currentSlide].classList.remove('active');
+    if (slides[currentSlide]) slides[currentSlide].classList.remove('active');
     currentSlide = Math.floor(Math.random() * slides.length);
-    slides[currentSlide].classList.add('active');
+    if (slides[currentSlide]) slides[currentSlide].classList.add('active');
 }
 setInterval(nextSlide, 4500);
 
 // Panel Admin
-window.toggleAdminPanel = function() {
+function toggleAdminPanel() {
     const panel = document.getElementById('adminPanel');
-    panel.classList.toggle('hidden');
-    panel.scrollIntoView({ behavior: 'smooth' });
-};
+    if (panel) {
+        panel.classList.toggle('hidden');
+        panel.scrollIntoView({ behavior: 'smooth' });
+    }
+}
 
-// Subida a Firestore optimizada con compresión inteligente
-window.uploadMediaFile = async function() {
+// Subida de Multimedia con compresión optimizada para Firestore
+async function uploadMediaFile() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
 
-    if (!fileInput.files || fileInput.files.length === 0) {
-        return alert('Por favor selecciona una foto de tu galería.');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        return alert('Por favor selecciona una foto o video de tu galería.');
     }
 
     const file = fileInput.files[0];
+    alert('Optimizando recuerdo y sincronizando con la nube... 💗');
+
     if (file.type.startsWith('video')) {
-        alert('Por el momento los videos pesan demasiado para este espacio gratuito. Te recomendamos usar fotos hermosas.');
-        return;
-    }
-
-    alert('Optimizando foto y sincronizando... Un momento 💗');
-
-    const reader = new FileReader();
-    reader.onload = function(event) {
-        const img = new Image();
-        img.onload = async function() {
-            const canvas = document.createElement('canvas');
-            let width = img.width;
-            let height = img.height;
-            const maxWidth = 450; 
-
-            if (width > maxWidth) {
-                height = Math.round((height * maxWidth) / width);
-                width = maxWidth;
-            }
-
-            canvas.width = width;
-            canvas.height = height;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, width, height);
-
-            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.50);
-
+        const reader = new FileReader();
+        reader.onload = async function(event) {
             if (!dbData.media) dbData.media = [];
-            dbData.media.push({ 
-                id: Date.now(), 
-                url: compressedDataUrl, 
-                type: 'image', 
-                caption: captionInput || 'Recuerdo especial 💗' 
+            dbData.media.push({
+                id: Date.now(),
+                url: event.target.result,
+                type: 'video',
+                caption: captionInput || 'Recuerdo especial 💗'
             });
-            
             await saveToCloud();
-
             fileInput.value = '';
             document.getElementById('mediaCaption').value = '';
-            alert('¡Foto guardada y sincronizada con éxito!');
+            alert('¡Video subido y sincronizado con éxito!');
         };
-        img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
-};
+        reader.readAsDataURL(file);
+    } else {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const maxWidth = 450;
 
-window.addSong = async function() {
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.50);
+
+                if (!dbData.media) dbData.media = [];
+                dbData.media.push({ 
+                    id: Date.now(), 
+                    url: compressedDataUrl, 
+                    type: 'image', 
+                    caption: captionInput || 'Recuerdo especial 💗' 
+                });
+                
+                await saveToCloud();
+
+                fileInput.value = '';
+                document.getElementById('mediaCaption').value = '';
+                alert('¡Foto guardada y sincronizada con éxito!');
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+async function addSong() {
     const title = document.getElementById('songTitle').value;
-    const addedBy = document.getElementById('songAddedBy').value || 'Amor';
+    const addedBy = document.getElementById('songAddedBy').value || 'Su Niño';
     const url = document.getElementById('songUrl').value;
     if (!title || !url) return alert('Llena el título y el enlace');
     
@@ -335,7 +315,7 @@ window.addSong = async function() {
     document.getElementById('songTitle').value = '';
     document.getElementById('songUrl').value = '';
     alert('¡Canción guardada con éxito!');
-};
+}
 
 async function deleteSong(index) {
     if (confirm('¿Seguro que deseas eliminar esta canción?')) {
@@ -344,7 +324,7 @@ async function deleteSong(index) {
     }
 }
 
-window.addMemory = async function() {
+async function addMemory() {
     const text = document.getElementById('memoryText').value;
     if (!text) return alert('Escribe un texto');
     
@@ -354,7 +334,7 @@ window.addMemory = async function() {
     await saveToCloud();
     document.getElementById('memoryText').value = '';
     alert('¡Texto guardado con éxito!');
-};
+}
 
 async function editMemory(index) {
     const newText = prompt('Edita el texto del momento:', dbData.memories[index]);
@@ -372,71 +352,60 @@ async function deleteMemory(index) {
 }
 
 // Modales
-window.openMusicModal = function() {
+function openMusicModal() {
     renderMusicModalList();
     document.getElementById('musicModal').classList.remove('hidden');
-};
-window.closeMusicModal = function() {
+}
+function closeMusicModal() {
     document.getElementById('musicModal').classList.add('hidden');
-};
+}
 
-window.openTextsModal = function() {
+function openTextsModal() {
     renderTextsModalList();
     document.getElementById('textsModal').classList.remove('hidden');
-};
-window.closeTextsModal = function() {
+}
+function closeTextsModal() {
     document.getElementById('textsModal').classList.add('hidden');
-};
+}
 
 let activeCustomIndex = null;
 
-window.openGalleryModal = function() {
+function openGalleryModal() {
     const modal = document.getElementById('galleryModal');
     const grid = document.getElementById('galleryGrid');
+    if (!grid) return;
     grid.innerHTML = '';
 
     if (!dbData.media || dbData.media.length === 0) {
-        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos subidas todavía.</p>';
+        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
     } else {
         dbData.media.forEach((item, idx) => {
+            let thumbContent = item.type === 'video' 
+                ? `<video src="${item.url}" style="width:100%; height:120px; object-fit:cover; border-radius:8px;"></video>` 
+                : `<img src="${item.url}" class="gallery-thumb" alt="Subida" style="width:100%; height:120px; object-fit:cover; border-radius:8px;">`;
+            
             grid.innerHTML += `
-                <div class="gallery-card">
-                    <button class="gallery-delete-btn" data-index="${idx}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                    <div class="gallery-item-click" data-url="${item.url}" data-caption="${item.caption}" data-index="${idx}">
-                        <img src="${item.url}" class="gallery-thumb" alt="Subida">
-                        <div class="gallery-caption">${item.caption}</div>
+                <div class="gallery-card" style="background: rgba(255,255,255,0.05); padding: 8px; border-radius: 10px; position: relative;">
+                    <button onclick="deleteCustomMedia(event, ${idx})" title="Eliminar" style="position: absolute; top: 12px; right: 12px; background: rgba(0,0,0,0.6); border: none; color: #ff6b6b; padding: 6px; border-radius: 50%; cursor: pointer;"><i class="fa-solid fa-trash"></i></button>
+                    <div onclick="openViewer('${item.url}', '${item.type || 'image'}', '${item.caption}', ${idx})" style="cursor: pointer;">
+                        ${thumbContent}
+                        <div class="gallery-caption" style="font-size: 0.8rem; margin-top: 6px; color: #fff; text-align: center;">${item.caption}</div>
                     </div>
                 </div>
             `;
         });
     }
 
-    document.querySelectorAll('.gallery-delete-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            const idx = e.currentTarget.getAttribute('data-index');
-            deleteCustomMedia(parseInt(idx));
-        });
-    });
-
-    document.querySelectorAll('.gallery-item-click').forEach(item => {
-        item.addEventListener('click', (e) => {
-            const url = e.currentTarget.getAttribute('data-url');
-            const caption = e.currentTarget.getAttribute('data-caption');
-            const idx = e.currentTarget.getAttribute('data-index');
-            openViewer(url, 'image', caption, parseInt(idx));
-        });
-    });
-
     modal.classList.remove('hidden');
-};
+}
 
-window.closeGalleryModal = function() {
+function closeGalleryModal() {
     document.getElementById('galleryModal').classList.add('hidden');
-};
+}
 
-async function deleteCustomMedia(index) {
-    if (confirm('¿Deseas eliminar esta foto de la galería?')) {
+async function deleteCustomMedia(event, index) {
+    if (event) event.stopPropagation();
+    if (confirm('¿Deseas eliminar este recuerdo de la galería?')) {
         dbData.media.splice(index, 1);
         await saveToCloud();
         openGalleryModal();
@@ -449,26 +418,32 @@ function openViewer(url, type, caption, customIndex) {
     const container = document.getElementById('viewerContainer');
     const captionEl = document.getElementById('viewerCaptionText');
     
-    container.innerHTML = `<img src="${url}" alt="Ampliada">`;
-    captionEl.innerText = caption;
+    container.innerHTML = '';
+    if (type === 'video') {
+        container.innerHTML = `<video src="${url}" controls autoplay style="width:100%; max-height:60vh; border-radius:10px;"></video>`;
+    } else {
+        container.innerHTML = `<img src="${url}" alt="Ampliada" style="width:100%; max-height:60vh; object-fit:contain; border-radius:10px;">`;
+    }
+    if (captionEl) captionEl.innerText = caption;
     viewerModal.classList.remove('hidden');
 }
 
-window.closeViewerModal = function() {
+function closeViewerModal() {
     document.getElementById('viewerModal').classList.add('hidden');
-};
+}
 
-window.enableEditCaption = async function() {
+async function enableEditCaption() {
     if (activeCustomIndex === null) return;
     const currentCap = dbData.media[activeCustomIndex].caption;
-    const newCap = prompt('Editar texto de la foto:', currentCap);
+    const newCap = prompt('Editar texto del recuerdo:', currentCap);
     if (newCap !== null && newCap.trim() !== '') {
         dbData.media[activeCustomIndex].caption = newCap.trim();
         await saveToCloud();
-        document.getElementById('viewerCaptionText').innerText = newCap.trim();
+        const captionEl = document.getElementById('viewerCaptionText');
+        if (captionEl) captionEl.innerText = newCap.trim();
         openGalleryModal();
     }
-};
+}
 
-// Iniciar sincronización en tiempo real
+// Iniciar sincronización al cargar
 initRealtimeSync();
