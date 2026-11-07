@@ -101,6 +101,12 @@ h1 {
     background: #000;
 }
 
+.empty-slide {
+    color: #ffb3c1;
+    font-size: 0.9rem;
+    padding: 20px;
+}
+
 /* BOTONES Y TARJETAS */
 .action-btn {
     background: linear-gradient(45deg, #ff4d6d, #ff758f);
@@ -160,16 +166,16 @@ h1 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-direction: column;
+    gap: 10px;
+    text-align: left;
 }
 
-.music-btn {
-    background: #ff4d6d;
-    color: white;
-    text-decoration: none;
-    padding: 6px 14px;
-    border-radius: 15px;
-    font-size: 0.8rem;
-    font-weight: 600;
+.music-info {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .delete-btn {
@@ -178,39 +184,12 @@ h1 {
     color: #ff4d6d;
     cursor: pointer;
     font-size: 1.1rem;
-    margin-left: 10px;
     transition: transform 0.2s;
 }
 
 .delete-btn:hover { transform: scale(1.2); }
 
-.love-letter {
-    background: rgba(255, 77, 109, 0.05);
-    border: 1px dashed rgba(255, 77, 109, 0.3);
-    border-radius: 20px;
-    padding: 22px;
-    text-align: justify;
-    line-height: 1.6;
-    font-size: 0.92rem;
-    color: #ffe6ea;
-    margin-bottom: 25px;
-}
-
-.love-letter p { margin-bottom: 15px; }
-.love-letter p:last-child { margin-bottom: 0; }
-
-/* PANEL ADMIN */
-.admin-panel {
-    background: rgba(15, 15, 25, 0.95);
-    border: 1px solid rgba(255, 77, 109, 0.4);
-    border-radius: 20px;
-    padding: 20px;
-    text-align: left;
-    margin-bottom: 25px;
-}
-
-.admin-panel.hidden { display: none; }
-
+/* ADMIN BLOCK DENTRO DE MODALES */
 .admin-block {
     margin-top: 15px;
     padding-top: 15px;
@@ -219,7 +198,7 @@ h1 {
 
 .admin-block h4 { color: #ffb3c1; margin-bottom: 8px; font-size: 0.9rem; }
 
-.admin-panel input {
+.admin-block input {
     width: 100%;
     padding: 10px;
     margin-bottom: 8px;
@@ -227,16 +206,6 @@ h1 {
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(0, 0, 0, 0.5);
     color: white;
-}
-
-.admin-panel button {
-    background: #ff4d6d;
-    color: white;
-    border: none;
-    padding: 8px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
 }
 
 /* MODALES */
