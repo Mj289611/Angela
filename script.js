@@ -1,22 +1,21 @@
-// CONFIGURACIÓN DE LA NUBE (Contenedor Privado con Ruta Directa)
-const BIN_ID = '6aef8371ffd516053afb36b';
-const API_KEY = '$2a$10$6/49wgQinynTNM9gPxM8Pup0wBBrNqXkQae3RgSXnMEvnC6krP2o.';
+// CONFIGURACIÓN DE LA NUBE (Nuevo Contenedor Público)
+const BIN_ID = '6aef8cebac6210605a760ed9';
+const API_KEY = '$2a$10$xHfX7upHfmUF69uILZpbqu5B.RSSjsnZj2goZ3GamhiOHLuKa/MUG';
 
 let dbData = { songs: [], memories: [], media: [] };
 
-// Cargar datos desde la nube (Ruta directa al contenedor privado)
+// Cargar datos desde la nube (JSONBin v3 Público)
 async function loadFromCloud() {
     try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
             method: 'GET',
             headers: {
-                'X-Master-Key': API_KEY,
-                'X-Bin-Meta': 'false'
+                'X-Master-Key': API_KEY
             }
         });
         if (response.ok) {
             const result = await response.json();
-            dbData = result || { songs: [], memories: [], media: [] };
+            dbData = result.record || { songs: [], memories: [], media: [] };
             renderEverything();
         } else {
             console.error("Error al cargar la nube, código:", response.status);
@@ -26,7 +25,7 @@ async function loadFromCloud() {
     }
 }
 
-// Guardar datos en la nube
+// Guardar datos en la nube (JSONBin v3 Público)
 async function saveToCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
