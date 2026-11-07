@@ -1,3 +1,39 @@
+// CONFIGURACIÓN DE LA NUBE (JSONBin.io)
+const BIN_ID = '6aef8371ffd516053afb36b'; 
+const API_KEY = '$2a$10$wN9vQZlQ0...'; // <--- PEGA AQUÍ TU MASTER KEY REAL DE JSONBIN
+
+let dbData = { songs: [], memories: [], media: [] };
+
+// Cargar datos desde la nube
+async function loadFromCloud() {
+    try {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+            headers: { 'X-Master-Key': API_KEY }
+        });
+        const result = await response.json();
+        dbData = result.record || { songs: [], memories: [], media: [] };
+        renderEverything();
+    } catch (e) {
+        console.error("Error al cargar la nube:", e);
+    }
+}
+
+// Guardar datos en la nube
+async function saveToCloud() {
+    try {
+        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': API_KEY
+            },
+            body: JSON.stringify(dbData)
+        });
+    } catch (e) {
+        console.error("Error al guardar en la nube:", e);
+    }
+}
+
 // 1. Contador de tiempo exacto
 const startDate = new Date('2026-04-18T00:00:00');
 
@@ -38,25 +74,17 @@ function createHeart() {
 }
 setInterval(createHeart, 400);
 
-// 3. DATOS Y LOCALSTORAGE (Cero imágenes estáticas por defecto)
-let songs = JSON.parse(localStorage.getItem('user_songs')) || [];
-let memories = JSON.parse(localStorage.getItem('user_memories')) || [];
-let customMedia = JSON.parse(localStorage.getItem('user_media')) || [];
-
-// Reproductor embebido + opción externa para Spotify / YouTube
+// Reproductor de Música Embebido + Botón Oficial
 function getMusicEmbedHtml(url) {
     if (!url) return '';
     let embedHtml = '';
     
-    // Spotify
     if (url.includes('spotify.com')) {
         const match = url.match(/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
         if (match) {
             embedHtml = `<iframe src="https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:12px; margin-top:8px;"></iframe>`;
         }
-    }
-    // YouTube
-    else if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    } else if (url.includes('youtube.com') || url.includes('youtu.be')) {
         let videoId = '';
         if (url.includes('youtu.be/')) {
             videoId = url.split('youtu.be/')[1]?.split('?')[0];
@@ -78,15 +106,21 @@ function getMusicEmbedHtml(url) {
     `;
 }
 
+function renderEverything() {
+    renderMusicModalList();
+    renderTextsModalList();
+    initDynamicMedia();
+}
+
 function renderMusicModalList() {
     const musicList = document.getElementById('musicModalList');
     if (!musicList) return;
     musicList.innerHTML = '';
-    if (songs.length === 0) {
+    if (dbData.songs.length === 0) {
         musicList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay canciones agregadas aún.</p>';
         return;
     }
-    songs.forEach((song, index) => {
+    dbData.songs.forEach((song, index) => {
         musicList.innerHTML += `
             <div class="music-card">
                 <div class="music-info">
@@ -108,11 +142,11 @@ function renderTextsModalList() {
     const memList = document.getElementById('textsModalList');
     if (!memList) return;
     memList.innerHTML = '';
-    if (memories.length === 0) {
+    if (dbData.memories.length === 0) {
         memList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay textos agregados aún.</p>';
         return;
     }
-    memories.forEach((mem, index) => {
+    dbData.memories.forEach((mem, index) => {
         memList.innerHTML += `
             <div class="memory-item">
                 <span style="width: 80%; text-align: left;">${mem}</span>
@@ -130,18 +164,18 @@ function initDynamicMedia() {
     if (!slider) return;
     slider.innerHTML = '';
 
-    if (customMedia.length === 0) {
+    if (dbData.media.length === 0) {
         slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos o videos para verlos aquí 💗</div></div>`;
         slides = document.querySelectorAll('.slide');
         return;
     }
 
-    customMedia.forEach((item, index) => {
+    dbData.media.forEach((item, index) => {
         const slide = document.createElement('div');
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        if (item.type && (item.type.startsWith('video') || item.url.match(/\.(mp4|webm|ogg)$/i))) {
+        if (item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i)) {
             slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
         } else {
             slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
@@ -151,7 +185,7 @@ function initDynamicMedia() {
     slides = document.querySelectorAll('.slide');
 }
 
-// 4. CARRUSEL ALEATORIO
+// Carrusel Aleatorio
 let slides = document.querySelectorAll('.slide');
 let currentSlide = 0;
 
@@ -163,104 +197,83 @@ function nextSlide() {
 }
 setInterval(nextSlide, 4500);
 
-// 5. PANEL DE ADMINISTRACIÓN (Hasta abajo)
+// Panel Admin (Hasta abajo)
 function toggleAdminPanel() {
     const panel = document.getElementById('adminPanel');
     panel.classList.toggle('hidden');
     panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-function uploadMediaFile() {
-    const fileInput = document.getElementById('mediaInput');
-    const urlInput = document.getElementById('mediaUrlInput');
-    const captionInput = document.getElementById('mediaCaption');
-    const file = fileInput.files[0];
-    const urlVal = urlInput.value.trim();
+async function uploadMediaFile() {
+    const urlVal = document.getElementById('mediaUrlInput').value.trim();
+    const captionInput = document.getElementById('mediaCaption').value.trim();
 
-    if (!file && !urlVal) {
-        return alert('Selecciona un archivo o pega un enlace URL');
-    }
+    if (!urlVal) return alert('Pega un enlace URL directo de imagen o video');
 
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            saveMediaData(e.target.result, file.type, captionInput.value);
-        };
-        reader.readAsDataURL(file);
-    } else if (urlVal) {
-        let type = 'image';
-        if (urlVal.match(/\.(mp4|webm|ogg)$/i)) type = 'video';
-        saveMediaData(urlVal, type, captionInput.value);
-    }
-}
+    let type = 'image';
+    if (urlVal.match(/\.(mp4|webm|ogg)$/i)) type = 'video';
 
-function saveMediaData(url, type, caption) {
-    const mediaData = { 
-        id: Date.now(),
-        url: url, 
-        type: type, 
-        caption: caption || 'Recuerdo especial 💗' 
-    };
-    customMedia.push(mediaData);
-    localStorage.setItem('user_media', JSON.stringify(customMedia));
-    
-    initDynamicMedia();
-    document.getElementById('mediaInput').value = '';
+    dbData.media.push({ id: Date.now(), url: urlVal, type: type, caption: captionInput || 'Recuerdo especial 💗' });
+    await saveToCloud();
+    renderEverything();
+
     document.getElementById('mediaUrlInput').value = '';
     document.getElementById('mediaCaption').value = '';
-    alert('¡Guardado con éxito en la galería!');
+    alert('¡Guardado con éxito en la nube!');
 }
 
-function addSong() {
+async function addSong() {
     const title = document.getElementById('songTitle').value;
     const addedBy = document.getElementById('songAddedBy').value || 'Amor';
     const url = document.getElementById('songUrl').value;
     if (!title || !url) return alert('Llena el título y el enlace');
     
-    songs.push({ title, addedBy, url });
-    localStorage.setItem('user_songs', JSON.stringify(songs));
+    dbData.songs.push({ title, addedBy, url });
+    await saveToCloud();
     renderMusicModalList();
+
     document.getElementById('songTitle').value = '';
     document.getElementById('songUrl').value = '';
     alert('¡Canción guardada con éxito!');
 }
 
-function deleteSong(index) {
+async function deleteSong(index) {
     if (confirm('¿Seguro que deseas eliminar esta canción?')) {
-        songs.splice(index, 1);
-        localStorage.setItem('user_songs', JSON.stringify(songs));
+        dbData.songs.splice(index, 1);
+        await saveToCloud();
         renderMusicModalList();
     }
 }
 
-function addMemory() {
+async function addMemory() {
     const text = document.getElementById('memoryText').value;
     if (!text) return alert('Escribe un texto');
-    memories.push(text);
-    localStorage.setItem('user_memories', JSON.stringify(memories));
+    dbData.memories.push(text);
+    await saveToCloud();
     renderTextsModalList();
+
     document.getElementById('memoryText').value = '';
     alert('¡Texto guardado con éxito!');
 }
 
-function editMemory(index) {
-    const newText = prompt('Edita el texto del momento:', memories[index]);
+async function editMemory(index) {
+    const newText = prompt('Edita el texto del momento:', dbData.memories[index]);
     if (newText !== null && newText.trim() !== '') {
-        memories[index] = newText.trim();
-        localStorage.setItem('user_memories', JSON.stringify(memories));
+        dbData.memories[index] = newText.trim();
+        await saveToCloud();
         renderTextsModalList();
     }
 }
 
-function deleteMemory(index) {
+async function deleteMemory(index) {
     if (confirm('¿Seguro que deseas eliminar este momento?')) {
-        memories.splice(index, 1);
-        localStorage.setItem('user_memories', JSON.stringify(memories));
+        dbData.memories.splice(index, 1);
+        await saveToCloud();
         renderTextsModalList();
     }
 }
 
-// 6. MODALES
+// Modales
 function openMusicModal() {
     renderMusicModalList();
     document.getElementById('musicModal').classList.remove('hidden');
@@ -284,12 +297,12 @@ function openGalleryModal() {
     const grid = document.getElementById('galleryGrid');
     grid.innerHTML = '';
 
-    if (customMedia.length === 0) {
+    if (dbData.media.length === 0) {
         grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
     }
 
-    customMedia.forEach((item, idx) => {
-        let isVideo = item.type && (item.type.startsWith('video') || item.url.match(/\.(mp4|webm|ogg)$/i));
+    dbData.media.forEach((item, idx) => {
+        let isVideo = item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i);
         let thumbHtml = isVideo 
             ? `<video src="${item.url}" class="gallery-thumb"></video>` 
             : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
@@ -312,11 +325,11 @@ function closeGalleryModal() {
     document.getElementById('galleryModal').classList.add('hidden');
 }
 
-function deleteCustomMedia(event, index) {
+async function deleteCustomMedia(event, index) {
     event.stopPropagation();
     if (confirm('¿Deseas eliminar este archivo de la galería?')) {
-        customMedia.splice(index, 1);
-        localStorage.setItem('user_media', JSON.stringify(customMedia));
+        dbData.media.splice(index, 1);
+        await saveToCloud();
         initDynamicMedia();
         openGalleryModal();
     }
@@ -329,13 +342,12 @@ function openViewer(url, type, caption, customIndex) {
     const captionEl = document.getElementById('viewerCaptionText');
     
     container.innerHTML = '';
-    if (type && (type.startsWith('video') || type === 'video' || url.match(/\.(mp4|webm|ogg)$/i))) {
+    if (type === 'video' || url.match(/\.(mp4|webm|ogg)$/i)) {
         container.innerHTML = `<video src="${url}" controls autoplay></video>`;
     } else {
         container.innerHTML = `<img src="${url}" alt="Ampliada">`;
     }
     captionEl.innerText = caption;
-    viewerModal.classList.add('hidden');
     viewerModal.classList.remove('hidden');
 }
 
@@ -343,19 +355,17 @@ function closeViewerModal() {
     document.getElementById('viewerModal').classList.add('hidden');
 }
 
-function enableEditCaption() {
+async function enableEditCaption() {
     if (activeCustomIndex === null) return;
-    const currentCap = customMedia[activeCustomIndex].caption;
+    const currentCap = dbData.media[activeCustomIndex].caption;
     const newCap = prompt('Editar texto de la foto/video:', currentCap);
     if (newCap !== null && newCap.trim() !== '') {
-        customMedia[activeCustomIndex].caption = newCap.trim();
-        localStorage.setItem('user_media', JSON.stringify(customMedia));
+        dbData.media[activeCustomIndex].caption = newCap.trim();
+        await saveToCloud();
         document.getElementById('viewerCaptionText').innerText = newCap.trim();
         openGalleryModal();
     }
 }
 
-// Inicialización
-initDynamicMedia();
-renderMusicModalList();
-renderTextsModalList();
+// Cargar todo al abrir la página
+loadFromCloud();
