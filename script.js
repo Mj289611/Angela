@@ -1,6 +1,6 @@
-// CONFIGURACIÓN DE LA NUBE (Con tus credenciales reales integradas)
+// CONFIGURACIÓN DE LA NUBE (Con tu Master Key nueva y tu Bin ID)
 const BIN_ID = '6aef8371ffd516053afb36b';
-const API_KEY = '$2a$10$dGxKRFWMfXPaNzK..gbnsO.dWduFYYzTwgu995dG1logC73FZKFiG';
+const API_KEY = '$2a$10$6/49wgQinynTNM9gPxM8Pup0wBBrNqXkQae3RgSXnMEvnC6krP2o.';
 
 let dbData = { songs: [], memories: [], media: [] };
 
