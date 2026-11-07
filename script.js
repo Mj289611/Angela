@@ -70,7 +70,7 @@ function renderSections() {
         `;
     });
 
-    // Memorias / Textos (Con opción de editar directamente)
+    // Memorias / Textos
     const memList = document.getElementById('memoriesListContainer');
     memList.innerHTML = '';
     memories.forEach((mem, index) => {
@@ -112,9 +112,11 @@ function nextSlide() {
 }
 setInterval(nextSlide, 4500);
 
-// 5. ADMINISTRACIÓN Y ACCIONES
-function toggleAdminPanel() {
-    document.getElementById('adminPanel').classList.toggle('hidden');
+// 5. PANEL DE ADMINISTRACIÓN (Se abre con los botones de cada sección)
+function toggleAdminPanel(section) {
+    const panel = document.getElementById('adminPanel');
+    panel.classList.toggle('hidden');
+    panel.scrollIntoView({ behavior: 'smooth' });
 }
 
 function uploadMediaFile() {
@@ -199,7 +201,7 @@ function deleteMemory(index) {
     }
 }
 
-// 6. MODALES DE GALERÍA Y VISOR (Con soporte de borrado de archivos subidos y edición de texto)
+// 6. MODALES DE GALERÍA (Incluye fotos y videos locales + subidos)
 let activeCustomIndex = null;
 
 function openGalleryModal() {
@@ -207,18 +209,25 @@ function openGalleryModal() {
     const grid = document.getElementById('galleryGrid');
     grid.innerHTML = '';
 
-    // Fotos base de la carpeta img/ (Estas no se borran por ser fijas del proyecto)
+    // Fotos fijas de la carpeta img/
     const defaultPhotos = [
-        { url: 'img/foto.jpg', cap: 'Foto inicial' },
-        { url: 'img/foto2.jpg', cap: 'Recuerdo 2' },
-        { url: 'img/foto3.jpg', cap: 'Recuerdo 3' },
-        { url: 'img/foto4.jpg', cap: 'Recuerdo 4' },
-        { url: 'img/foto5.jpg', cap: 'Recuerdo 5' },
-        { url: 'img/foto6.jpg', cap: 'Recuerdo 6' },
-        { url: 'img/foto7.jpg', cap: 'Recuerdo 7' },
-        { url: 'img/foto8.jpg', cap: 'Recuerdo 8' }
+        { url: 'img/foto.jpg', cap: 'Foto inicial', type: 'image' },
+        { url: 'img/foto2.jpg', cap: 'Recuerdo 2', type: 'image' },
+        { url: 'img/foto3.jpg', cap: 'Recuerdo 3', type: 'image' },
+        { url: 'img/foto4.jpg', cap: 'Recuerdo 4', type: 'image' },
+        { url: 'img/foto5.jpg', cap: 'Recuerdo 5', type: 'image' },
+        { url: 'img/foto6.jpg', cap: 'Recuerdo 6', type: 'image' },
+        { url: 'img/foto7.jpg', cap: 'Recuerdo 7', type: 'image' },
+        { url: 'img/foto8.jpg', cap: 'Recuerdo 8', type: 'image' }
     ];
 
+    // Videos fijos de la carpeta video/
+    const defaultVideos = [
+        { url: 'video/video1.mp4', cap: 'Video 1', type: 'video' },
+        { url: 'video/video2.mp4', cap: 'Video 2', type: 'video' }
+    ];
+
+    // Mostrar fotos fijas
     defaultPhotos.forEach(p => {
         grid.innerHTML += `
             <div class="gallery-card" onclick="openViewer('${p.url}', 'image', '${p.cap}', null)">
@@ -228,14 +237,26 @@ function openGalleryModal() {
         `;
     });
 
+    // Mostrar videos fijos
+    defaultVideos.forEach(v => {
+        grid.innerHTML += `
+            <div class="gallery-card" onclick="openViewer('${v.url}', 'video', '${v.cap}', null)">
+                <video src="${v.url}" class="gallery-thumb"></video>
+                <div class="gallery-caption">${v.cap} 🎥</div>
+            </div>
+        `;
+    });
+
+    // Mostrar archivos subidos por el usuario
     customMedia.forEach((item, idx) => {
-        let thumbHtml = (item.type && item.type.startsWith('video')) 
+        let isVideo = item.type && item.type.startsWith('video');
+        let thumbHtml = isVideo 
             ? `<video src="${item.url}" class="gallery-thumb"></video>` 
             : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
         
         grid.innerHTML += `
             <div class="gallery-card">
-                <button class="gallery-delete-btn" onclick="deleteCustomMedia(event, ${idx})" title="Eliminar foto/video"><i class="fa-solid fa-trash"></i></button>
+                <button class="gallery-delete-btn" onclick="deleteCustomMedia(event, ${idx})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                 <div onclick="openViewer('${item.url}', '${item.type || 'image'}', '${item.caption}', ${idx})">
                     ${thumbHtml}
                     <div class="gallery-caption">${item.caption}</div>
@@ -256,7 +277,7 @@ function deleteCustomMedia(event, index) {
     if (confirm('¿Deseas eliminar este archivo de la galería?')) {
         customMedia.splice(index, 1);
         localStorage.setItem('user_media', JSON.stringify(customMedia));
-        openGalleryModal(); // Recargar modal
+        openGalleryModal();
     }
 }
 
@@ -291,7 +312,7 @@ function enableEditCaption() {
         customMedia[activeCustomIndex].caption = newCap.trim();
         localStorage.setItem('user_media', JSON.stringify(customMedia));
         document.getElementById('viewerCaptionText').innerText = newCap.trim();
-        openGalleryModal(); // Actualizar galería de fondo
+        openGalleryModal();
     }
 }
 
