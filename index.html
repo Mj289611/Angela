@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para mi Mami 💗</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="hearts-container" id="heartsContainer"></div>
+
+    <div class="content">
+        <h1>Mami & Su Niño</h1>
+        <p class="sub-date">DESDE EL 18 DE ABRIL DE 2026</p>
+
+        <!-- Carrusel Principal Aleatorio (Ajuste perfecto sin recortes) -->
+        <div class="slider-container" id="mainSlider">
+            <div class="slide active"><img src="img/foto.jpg" alt="Foto"></div>
+            <div class="slide"><img src="img/foto2.jpg" alt="Foto 2"></div>
+            <div class="slide"><img src="img/foto3.jpg" alt="Foto 3"></div>
+            <div class="slide"><img src="img/foto4.jpg" alt="Foto 4"></div>
+            <div class="slide"><img src="img/foto5.jpg" alt="Foto 5"></div>
+            <div class="slide"><img src="img/foto6.jpg" alt="Foto 6"></div>
+            <div class="slide"><img src="img/foto7.jpg" alt="Foto 7"></div>
+            <div class="slide"><img src="img/foto8.jpg" alt="Foto 8"></div>
+            <div class="slide"><video src="video/video1.mp4" autoplay muted loop playsinline></video></div>
+            <div class="slide"><video src="video/video2.mp4" autoplay muted loop playsinline></video></div>
+        </div>
+
+        <!-- CONTADOR -->
+        <div class="counter-section">
+            <div class="counter-title">Tiempo Juntos</div>
+            <div class="grid-timer">
+                <div class="time-box"><span class="number" id="years">0</span><span class="label">Años</span></div>
+                <div class="time-box"><span class="number" id="months">0</span><span class="label">Meses</span></div>
+                <div class="time-box"><span class="number" id="days">0</span><span class="label">Días</span></div>
+                <div class="time-box"><span class="number" id="hours">0</span><span class="label">Horas</span></div>
+                <div class="time-box"><span class="number" id="minutes">0</span><span class="label">Minutos</span></div>
+                <div class="time-box"><span class="number" id="seconds">0</span><span class="label">Segundos</span></div>
+            </div>
+        </div>
+
+        <!-- APARTADO 1: MÚSICA -->
+        <div class="section-card">
+            <div class="counter-title" style="font-size: 1.8rem;">Nuestra Música 🎵</div>
+            <div id="musicListContainer"></div>
+        </div>
+
+        <!-- APARTADO 2: FOTOS Y VIDEOS (Galería) -->
+        <div class="section-card">
+            <div class="counter-title" style="font-size: 1.8rem;">Galería de Fotos y Videos 📸</div>
+            <button class="action-btn" onclick="openGalleryModal()">
+                <i class="fa-solid fa-images"></i> Ver Todos los Recuerdos Visuales
+            </button>
+        </div>
+
+        <!-- APARTADO 3: MOMENTOS Y TEXTOS -->
+        <div class="section-card">
+            <div class="counter-title" style="font-size: 1.8rem;">Nuestros Detalles y Textos ✨</div>
+            <div id="memoriesListContainer"></div>
+        </div>
+
+        <!-- CARTA DE AMOR ORIGINAL (INALTERADA) -->
+        <div class="love-letter">
+            <p>Mami, siempre te amaré, me doy cuenta que te amo cada día, en cada momento del día pienso en ti, duermo y sueño contigo, te necesito musho, eres mi lugar seguro, eres mi mami, quien cura mi corazón, grachas por tu amor, grachas x amarme cada día mami, eres y seras siempre lo mejor que me ha pasado en esta vida mami.</p>
+            <p>Eres hermosha, me encantan tus cachetitos, me encanta y enamora que seas tikitita, amo como te ves enojada, cuando me haces caritas, es lo mejor, me hace feliz eso de ti, con tu amor y estando a mi lado puedes transformarme, me haces feliz, cada parte de ti me ayuda a mejorar, sin ti no sería lo que soy, no lograría ser mejor, me ayudas musho mami.</p>
+            <p>Eres lo mejor de este mundo, tu niño hemosho sabe muy bien eso, estoy loco x ti de amor, te amo musho pero musho mamii, recuerda que con solo estar a mi lado me ayudas musho, imaginate con amarme, escucharme, amarme como soy, ser tu niño y tu mi mami, y ser mi lugar seguro me hace muy feliz 🥺💗</p>
+        </div>
+
+        <!-- PANEL DE ADMINISTRACIÓN COLABORATIVO -->
+        <button class="toggle-admin-btn" onclick="toggleAdminPanel()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Agregar Contenido (Multimedia / Música / Textos)
+        </button>
+
+        <div id="adminPanel" class="admin-panel hidden">
+            <h3>Panel de Contribución 💖</h3>
+            
+            <!-- Subir Foto o Video -->
+            <div class="admin-block">
+                <h4><i class="fa-solid fa-photo-film"></i> Subir Foto o Video de la Galería</h4>
+                <input type="file" id="mediaInput" accept="image/*,video/*">
+                <input type="text" id="mediaCaption" placeholder="Escribe un texto o dedicatoria para este archivo...">
+                <button onclick="uploadMediaFile()"><i class="fa-solid fa-upload"></i> Guardar en Galería</button>
+            </div>
+
+            <!-- Agregar Música -->
+            <div class="admin-block">
+                <h4><i class="fa-solid fa-music"></i> Agregar Música</h4>
+                <input type="text" id="songTitle" placeholder="Nombre de la canción y artista">
+                <input type="text" id="songAddedBy" placeholder="¿Quién la agrega? (ej. Su Niño 👦)">
+                <input type="url" id="songUrl" placeholder="Enlace de YouTube o Spotify">
+                <button onclick="addSong()"><i class="fa-solid fa-plus"></i> Guardar Canción</button>
+            </div>
+
+            <!-- Agregar Texto / Momento -->
+            <div class="admin-block">
+                <h4><i class="fa-solid fa-pen-fancy"></i> Agregar Momento o Texto</h4>
+                <input type="text" id="memoryText" placeholder="Escribe el detalle aquí...">
+                <button onclick="addMemory()"><i class="fa-solid fa-plus"></i> Guardar Texto</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE GALERÍA COMPLETA -->
+    <div id="galleryModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeGalleryModal()">&times;</span>
+            <h2>Nuestra Galería Completa 📸</h2>
+            <div class="gallery-grid" id="galleryGrid"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE VISOR INDIVIDUAL (Con texto/autor) -->
+    <div id="viewerModal" class="modal hidden">
+        <div class="modal-content viewer-content">
+            <span class="close-btn" onclick="closeViewerModal()">&times;</span>
+            <div id="viewerContainer"></div>
+            <p id="viewerCaptionText" class="viewer-caption"></p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
