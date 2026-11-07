@@ -1,32 +1,32 @@
-// CONFIGURACIÓN DE LA NUBE (Con tu Master Key y tu Bin ID definitivo)
+// CONFIGURACIÓN DE LA NUBE (Contenedor Privado con Candado)
 const BIN_ID = '6aef8371ffd516053afb36b';
 const API_KEY = '$2a$10$6/49wgQinynTNM9gPxM8Pup0wBBrNqXkQae3RgSXnMEvnC6krP2o.';
 
 let dbData = { songs: [], memories: [], media: [] };
 
-// Cargar datos desde la nube (JSONBin v3)
+// Cargar datos desde la nube (Petición adaptada para contenedores privados)
 async function loadFromCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
             method: 'GET',
             headers: {
-                'X-Master-Key': API_KEY
+                'X-Master-Key': API_KEY,
+                'X-Bin-Meta': 'false'
             }
         });
         if (response.ok) {
             const result = await response.json();
-            // JSONBin v3 almacena el contenido dentro de la propiedad .record
-            dbData = result.record || { songs: [], memories: [], media: [] };
+            dbData = result || { songs: [], memories: [], media: [] };
             renderEverything();
         } else {
-            console.error("Error al conectar con la nube, código:", response.status);
+            console.error("Error al cargar la nube, código:", response.status);
         }
     } catch (e) {
         console.error("Error de red al cargar:", e);
     }
 }
 
-// Guardar datos en la nube (JSONBin v3)
+// Guardar datos en la nube (Actualización para contenedor privado)
 async function saveToCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
