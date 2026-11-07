@@ -38,12 +38,12 @@ function createHeart() {
 }
 setInterval(createHeart, 400);
 
-// 3. DATOS Y LOCALSTORAGE (100% Dinámicos, sin carpetas fijas)
+// 3. DATOS Y LOCALSTORAGE (Cero imágenes estáticas por defecto)
 let songs = JSON.parse(localStorage.getItem('user_songs')) || [];
 let memories = JSON.parse(localStorage.getItem('user_memories')) || [];
 let customMedia = JSON.parse(localStorage.getItem('user_media')) || [];
 
-// Convertir links de Spotify o YouTube a reproductor embebido + botón oficial
+// Reproductor embebido + opción externa para Spotify / YouTube
 function getMusicEmbedHtml(url) {
     if (!url) return '';
     let embedHtml = '';
@@ -78,53 +78,51 @@ function getMusicEmbedHtml(url) {
     `;
 }
 
-function renderSections() {
-    // Música
-    const musicList = document.getElementById('musicListContainer');
-    if (musicList) {
-        musicList.innerHTML = '';
-        if (songs.length === 0) {
-            musicList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay canciones agregadas aún.</p>';
-        } else {
-            songs.forEach((song, index) => {
-                musicList.innerHTML += `
-                    <div class="music-card">
-                        <div class="music-info">
-                            <div>
-                                <b>${song.title}</b>
-                                <span style="display: block; font-size: 0.75rem; color: #ffb3c1;">Agregado por: ${song.addedBy}</span>
-                            </div>
-                            <button class="delete-btn" onclick="deleteSong(${index})"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                        <div style="width: 100%;">
-                            ${getMusicEmbedHtml(song.url)}
-                        </div>
-                    </div>
-                `;
-            });
-        }
+function renderMusicModalList() {
+    const musicList = document.getElementById('musicModalList');
+    if (!musicList) return;
+    musicList.innerHTML = '';
+    if (songs.length === 0) {
+        musicList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay canciones agregadas aún.</p>';
+        return;
     }
+    songs.forEach((song, index) => {
+        musicList.innerHTML += `
+            <div class="music-card">
+                <div class="music-info">
+                    <div>
+                        <b>${song.title}</b>
+                        <span style="display: block; font-size: 0.75rem; color: #ffb3c1;">Agregado por: ${song.addedBy}</span>
+                    </div>
+                    <button class="delete-btn" onclick="deleteSong(${index})"><i class="fa-solid fa-trash"></i></button>
+                </div>
+                <div style="width: 100%;">
+                    ${getMusicEmbedHtml(song.url)}
+                </div>
+            </div>
+        `;
+    });
+}
 
-    // Textos / Memorias
-    const memList = document.getElementById('memoriesListContainer');
-    if (memList) {
-        memList.innerHTML = '';
-        if (memories.length === 0) {
-            memList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay textos agregados aún.</p>';
-        } else {
-            memories.forEach((mem, index) => {
-                memList.innerHTML += `
-                    <div class="memory-item">
-                        <span style="width: 80%; text-align: left;">${mem}</span>
-                        <div>
-                            <button class="delete-btn" onclick="editMemory(${index})" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                            <button class="delete-btn" onclick="deleteMemory(${index})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-        }
+function renderTextsModalList() {
+    const memList = document.getElementById('textsModalList');
+    if (!memList) return;
+    memList.innerHTML = '';
+    if (memories.length === 0) {
+        memList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay textos agregados aún.</p>';
+        return;
     }
+    memories.forEach((mem, index) => {
+        memList.innerHTML += `
+            <div class="memory-item">
+                <span style="width: 80%; text-align: left;">${mem}</span>
+                <div>
+                    <button class="delete-btn" onclick="editMemory(${index})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                    <button class="delete-btn" onclick="deleteMemory(${index})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    });
 }
 
 function initDynamicMedia() {
@@ -143,7 +141,7 @@ function initDynamicMedia() {
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        if (item.type && item.type.startsWith('video')) {
+        if (item.type && (item.type.startsWith('video') || item.url.match(/\.(mp4|webm|ogg)$/i))) {
             slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
         } else {
             slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
@@ -165,7 +163,7 @@ function nextSlide() {
 }
 setInterval(nextSlide, 4500);
 
-// 5. ADMINISTRACIÓN
+// 5. PANEL DE ADMINISTRACIÓN (Hasta abajo)
 function toggleAdminPanel() {
     const panel = document.getElementById('adminPanel');
     panel.classList.toggle('hidden');
@@ -174,27 +172,43 @@ function toggleAdminPanel() {
 
 function uploadMediaFile() {
     const fileInput = document.getElementById('mediaInput');
+    const urlInput = document.getElementById('mediaUrlInput');
     const captionInput = document.getElementById('mediaCaption');
     const file = fileInput.files[0];
-    if (!file) return alert('Selecciona un archivo');
+    const urlVal = urlInput.value.trim();
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const mediaData = { 
-            id: Date.now(),
-            url: e.target.result, 
-            type: file.type, 
-            caption: captionInput.value || 'Recuerdo especial 💗' 
+    if (!file && !urlVal) {
+        return alert('Selecciona un archivo o pega un enlace URL');
+    }
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            saveMediaData(e.target.result, file.type, captionInput.value);
         };
-        customMedia.push(mediaData);
-        localStorage.setItem('user_media', JSON.stringify(customMedia));
-        
-        initDynamicMedia();
-        fileInput.value = '';
-        captionInput.value = '';
-        alert('¡Guardado con éxito!');
+        reader.readAsDataURL(file);
+    } else if (urlVal) {
+        let type = 'image';
+        if (urlVal.match(/\.(mp4|webm|ogg)$/i)) type = 'video';
+        saveMediaData(urlVal, type, captionInput.value);
+    }
+}
+
+function saveMediaData(url, type, caption) {
+    const mediaData = { 
+        id: Date.now(),
+        url: url, 
+        type: type, 
+        caption: caption || 'Recuerdo especial 💗' 
     };
-    reader.readAsDataURL(file);
+    customMedia.push(mediaData);
+    localStorage.setItem('user_media', JSON.stringify(customMedia));
+    
+    initDynamicMedia();
+    document.getElementById('mediaInput').value = '';
+    document.getElementById('mediaUrlInput').value = '';
+    document.getElementById('mediaCaption').value = '';
+    alert('¡Guardado con éxito en la galería!');
 }
 
 function addSong() {
@@ -205,7 +219,7 @@ function addSong() {
     
     songs.push({ title, addedBy, url });
     localStorage.setItem('user_songs', JSON.stringify(songs));
-    renderSections();
+    renderMusicModalList();
     document.getElementById('songTitle').value = '';
     document.getElementById('songUrl').value = '';
     alert('¡Canción guardada con éxito!');
@@ -215,7 +229,7 @@ function deleteSong(index) {
     if (confirm('¿Seguro que deseas eliminar esta canción?')) {
         songs.splice(index, 1);
         localStorage.setItem('user_songs', JSON.stringify(songs));
-        renderSections();
+        renderMusicModalList();
     }
 }
 
@@ -224,7 +238,7 @@ function addMemory() {
     if (!text) return alert('Escribe un texto');
     memories.push(text);
     localStorage.setItem('user_memories', JSON.stringify(memories));
-    renderSections();
+    renderTextsModalList();
     document.getElementById('memoryText').value = '';
     alert('¡Texto guardado con éxito!');
 }
@@ -234,7 +248,7 @@ function editMemory(index) {
     if (newText !== null && newText.trim() !== '') {
         memories[index] = newText.trim();
         localStorage.setItem('user_memories', JSON.stringify(memories));
-        renderSections();
+        renderTextsModalList();
     }
 }
 
@@ -242,11 +256,27 @@ function deleteMemory(index) {
     if (confirm('¿Seguro que deseas eliminar este momento?')) {
         memories.splice(index, 1);
         localStorage.setItem('user_memories', JSON.stringify(memories));
-        renderSections();
+        renderTextsModalList();
     }
 }
 
-// 6. MODAL DE GALERÍA COMPLETA
+// 6. MODALES
+function openMusicModal() {
+    renderMusicModalList();
+    document.getElementById('musicModal').classList.remove('hidden');
+}
+function closeMusicModal() {
+    document.getElementById('musicModal').classList.add('hidden');
+}
+
+function openTextsModal() {
+    renderTextsModalList();
+    document.getElementById('textsModal').classList.remove('hidden');
+}
+function closeTextsModal() {
+    document.getElementById('textsModal').classList.add('hidden');
+}
+
 let activeCustomIndex = null;
 
 function openGalleryModal() {
@@ -259,7 +289,7 @@ function openGalleryModal() {
     }
 
     customMedia.forEach((item, idx) => {
-        let isVideo = item.type && item.type.startsWith('video');
+        let isVideo = item.type && (item.type.startsWith('video') || item.url.match(/\.(mp4|webm|ogg)$/i));
         let thumbHtml = isVideo 
             ? `<video src="${item.url}" class="gallery-thumb"></video>` 
             : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
@@ -299,12 +329,13 @@ function openViewer(url, type, caption, customIndex) {
     const captionEl = document.getElementById('viewerCaptionText');
     
     container.innerHTML = '';
-    if (type && (type.startsWith('video') || type === 'video')) {
+    if (type && (type.startsWith('video') || type === 'video' || url.match(/\.(mp4|webm|ogg)$/i))) {
         container.innerHTML = `<video src="${url}" controls autoplay></video>`;
     } else {
         container.innerHTML = `<img src="${url}" alt="Ampliada">`;
     }
     captionEl.innerText = caption;
+    viewerModal.classList.add('hidden');
     viewerModal.classList.remove('hidden');
 }
 
@@ -326,4 +357,5 @@ function enableEditCaption() {
 
 // Inicialización
 initDynamicMedia();
-renderSections();
+renderMusicModalList();
+renderTextsModalList();
