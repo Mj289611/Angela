@@ -1,32 +1,32 @@
-// CONFIGURACIÓN DE LA NUBE (Con tu Bin ID y tu Master Key)
+// CONFIGURACIÓN DE LA NUBE (Con tu Master Key y tu Bin ID definitivo)
 const BIN_ID = '6aef8371ffd516053afb36b';
 const API_KEY = '$2a$10$6/49wgQinynTNM9gPxM8Pup0wBBrNqXkQae3RgSXnMEvnC6krP2o.';
 
 let dbData = { songs: [], memories: [], media: [] };
 
-// Cargar datos desde la nube usando un puente anti-bloqueo
+// Cargar datos desde la nube (JSONBin v3)
 async function loadFromCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
             method: 'GET',
             headers: {
-                'X-Master-Key': API_KEY,
-                'X-Bin-Meta': 'false'
+                'X-Master-Key': API_KEY
             }
         });
         if (response.ok) {
             const result = await response.json();
-            dbData = result || { songs: [], memories: [], media: [] };
+            // JSONBin v3 almacena el contenido dentro de la propiedad .record
+            dbData = result.record || { songs: [], memories: [], media: [] };
             renderEverything();
         } else {
-            console.error("No se pudo cargar de la nube, usando respaldo local.");
+            console.error("Error al conectar con la nube, código:", response.status);
         }
     } catch (e) {
-        console.error("Error de conexión:", e);
+        console.error("Error de red al cargar:", e);
     }
 }
 
-// Guardar datos en la nube con el puente de seguridad
+// Guardar datos en la nube (JSONBin v3)
 async function saveToCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
@@ -38,10 +38,10 @@ async function saveToCloud() {
             body: JSON.stringify(dbData)
         });
         if (!response.ok) {
-            alert('Hubo un pequeño error al sincronizar con la nube.');
+            console.error("Error al guardar en la nube, código:", response.status);
         }
     } catch (e) {
-        console.error("Error al guardar:", e);
+        console.error("Error de red al guardar:", e);
     }
 }
 
