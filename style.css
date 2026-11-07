@@ -97,12 +97,12 @@ h1 {
 .slide img, .slide video {
     width: 100%;
     height: 100%;
-    object-fit: contain; /* Mantiene proporciones verticales exactas sin recortes */
+    object-fit: contain;
     background: #000;
 }
 
 /* BOTONES Y TARJETAS */
-.action-btn, .toggle-admin-btn {
+.action-btn {
     background: linear-gradient(45deg, #ff4d6d, #ff758f);
     color: white;
     border: none;
@@ -297,7 +297,7 @@ h1 {
 
 .gallery-thumb {
     width: 100%;
-    height: 220px; /* Formato vertical 9:16 en la miniatura de la galería */
+    height: 220px;
     object-fit: cover;
     background: #000;
 }
