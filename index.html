@@ -3,62 +3,80 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Para Ángela ❤️</title>
+  <title>Para mi amor ❤️</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-  <!-- Encabezado con Contador -->
-  <header class="hero">
-    <h1>Juntos por siempre ❤️</h1>
-    <div id="counter" class="counter">Cargando tiempo...</div>
+  <!-- Cabecera Romántica -->
+  <header class="hero-section">
+    <div class="hero-content">
+      <h1>Para ti, mi amor ❤️</h1>
+      <div id="counter" class="counter-box">Calculando tiempo...</div>
+    </div>
   </header>
 
-  <!-- Panel de Administración / Agregar Contenido -->
-  <section class="admin-panel">
-    <h2>Añadir a la colección</h2>
-    <form id="add-media-form">
-      <select id="media-type" required>
-        <option value="photo">Imagen (Foto)</option>
-        <option value="video">Video</option>
-        <option value="music">Música (Audio)</option>
-        <option value="note">Nota de Texto</option>
-      </select>
-      
-      <input type="text" id="media-title" placeholder="Título o descripción" required>
-      <input type="text" id="media-url" placeholder="Ruta local (ej: img/foto.jpg) o URL" required>
-      <button type="submit">Guardar</button>
-    </form>
-  </section>
+  <!-- Contenedor de Secciones / Carpetas -->
+  <main class="main-container">
 
-  <!-- Navegación por Carpetas -->
-  <main class="folders-container">
-    
-    <!-- Carpeta 1: Fotos -->
-    <section class="folder">
-      <h2>📸 Galería de Fotos</h2>
-      <div id="photos-grid" class="grid grid-916"></div>
+    <!-- Carpeta 1: Galería de Fotos -->
+    <section class="media-section">
+      <div class="section-header">
+        <h2>📸 Galería de Fotos</h2>
+        <button class="add-btn" onclick="openModal('photo')">+ Agregar</button>
+      </div>
+      <div id="photos-grid" class="media-grid format-916"></div>
     </section>
 
-    <!-- Carpeta 2: Videos -->
-    <section class="folder">
-      <h2>🎥 Galería de Videos</h2>
-      <div id="videos-grid" class="grid grid-916"></div>
+    <!-- Carpeta 2: Galería de Videos -->
+    <section class="media-section">
+      <div class="section-header">
+        <h2>🎥 Galería de Videos</h2>
+        <button class="add-btn" onclick="openModal('video')">+ Agregar</button>
+      </div>
+      <div id="videos-grid" class="media-grid format-916"></div>
     </section>
 
-    <!-- Carpeta 3: Música -->
-    <section class="folder">
-      <h2>🎵 Nuestra Música</h2>
-      <div id="music-list" class="audio-list"></div>
+    <!-- Carpeta 3: Nuestra Música -->
+    <section class="media-section">
+      <div class="section-header">
+        <h2>🎵 Nuestra Música</h2>
+        <button class="add-btn" onclick="openModal('music')">+ Agregar</button>
+      </div>
+      <div id="music-list" class="music-grid"></div>
     </section>
 
-    <!-- Carpeta 4: Notas / Textos -->
-    <section class="folder">
-      <h2>📝 Notas y Recuerdos</h2>
-      <div id="notes-grid" class="notes-grid"></div>
+    <!-- Carpeta 4: Notas y Recuerdos -->
+    <section class="media-section">
+      <div class="section-header">
+        <h2>📝 Notas y Recuerdos</h2>
+        <button class="add-btn" onclick="openModal('note')">+ Agregar</button>
+      </div>
+      <div id="notes-grid" class="notes-container"></div>
     </section>
 
   </main>
+
+  <!-- Modal para añadir contenido -->
+  <div id="add-modal" class="modal-overlay" style="display: none;">
+    <div class="modal-content">
+      <h3 id="modal-title-text">Añadir elemento</h3>
+      <form id="dynamic-form">
+        <div class="input-group">
+          <label>Título o descripción:</label>
+          <input type="text" id="item-title" placeholder="Ej: Nuestro recuerdo" required>
+        </div>
+        <div class="input-group">
+          <label>Ruta (ej: img/foto.jpg o video/vid.mp4):</label>
+          <input type="text" id="item-url" placeholder="Ruta del archivo" required>
+        </div>
+        <div class="modal-buttons">
+          <button type="button" class="btn-cancel" onclick="closeModal()">Cancelar</button>
+          <button type="submit" class="btn-save">Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
 
   <script src="script.js"></script>
 </body>
