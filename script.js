@@ -1,13 +1,13 @@
-// CONFIGURACIÓN DE LA NUBE (Contenedor Privado con Candado)
+// CONFIGURACIÓN DE LA NUBE (Contenedor Privado con Ruta Directa)
 const BIN_ID = '6aef8371ffd516053afb36b';
 const API_KEY = '$2a$10$6/49wgQinynTNM9gPxM8Pup0wBBrNqXkQae3RgSXnMEvnC6krP2o.';
 
 let dbData = { songs: [], memories: [], media: [] };
 
-// Cargar datos desde la nube (Petición adaptada para contenedores privados)
+// Cargar datos desde la nube (Ruta directa al contenedor privado)
 async function loadFromCloud() {
     try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'GET',
             headers: {
                 'X-Master-Key': API_KEY,
@@ -26,7 +26,7 @@ async function loadFromCloud() {
     }
 }
 
-// Guardar datos en la nube (Actualización para contenedor privado)
+// Guardar datos en la nube
 async function saveToCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
