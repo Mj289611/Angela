@@ -38,59 +38,103 @@ function createHeart() {
 }
 setInterval(createHeart, 400);
 
-// 3. DATOS Y LOCALSTORAGE
-let songs = JSON.parse(localStorage.getItem('user_songs')) || [
-    { title: "M.A.I - Milo J", addedBy: "Su Niño 👦", url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ" }
-];
-
-let memories = JSON.parse(localStorage.getItem('user_memories')) || [
-    "💗 Tu lugar seguro: Saber que soy tu niño y tú mi mami cura cualquier momento.",
-    "✨ Tus caritas: Amo cuando te ves enojada y cómo me haces muecas.",
-    "🌸 Tikitita: Me enamora lo tierna que eres en cada detalle."
-];
-
+// 3. DATOS Y LOCALSTORAGE (100% Dinámicos)
+let songs = JSON.parse(localStorage.getItem('user_songs')) || [];
+let memories = JSON.parse(localStorage.getItem('user_memories')) || [];
 let customMedia = JSON.parse(localStorage.getItem('user_media')) || [];
+
+// Convertir links de Spotify o YouTube a reproductores embebibles
+function getEmbedHtml(url) {
+    if (!url) return '';
+    // Spotify
+    if (url.includes('spotify.com')) {
+        const match = url.match(/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
+        if (match) {
+            return `<iframe src="https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+        }
+    }
+    // YouTube
+    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+        let videoId = '';
+        if (url.includes('youtu.be/')) {
+            videoId = url.split('youtu.be/')[1]?.split('?')[0];
+        } else if (url.includes('watch?v=')) {
+            videoId = url.split('watch?v=')[1]?.split('&')[0];
+        } else if (url.includes('embed/')) {
+            videoId = url.split('embed/')[1]?.split('?')[0];
+        }
+        if (videoId) {
+            return `<iframe width="100%" height="80" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        }
+    }
+    return `<a href="${url}" target="_blank" class="music-btn" style="display:inline-block; margin-top:5px;">Escuchar Enlace</a>`;
+}
 
 function renderSections() {
     // Música
     const musicList = document.getElementById('musicListContainer');
-    musicList.innerHTML = '';
-    songs.forEach((song, index) => {
-        musicList.innerHTML += `
-            <div class="music-card">
-                <div>
-                    <b>${song.title}</b>
-                    <span style="display: block; font-size: 0.75rem; color: #ffb3c1;">Agregado por: ${song.addedBy}</span>
-                </div>
-                <div>
-                    <a href="${song.url}" target="_blank" class="music-btn">Escuchar</a>
-                    <button class="delete-btn" onclick="deleteSong(${index})"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </div>
-        `;
-    });
+    if (musicList) {
+        musicList.innerHTML = '';
+        if (songs.length === 0) {
+            musicList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay canciones agregadas aún.</p>';
+        } else {
+            songs.forEach((song, index) => {
+                musicList.innerHTML += `
+                    <div class="music-card">
+                        <div class="music-info">
+                            <div>
+                                <b>${song.title}</b>
+                                <span style="display: block; font-size: 0.75rem; color: #ffb3c1;">Agregado por: ${song.addedBy}</span>
+                            </div>
+                            <button class="delete-btn" onclick="deleteSong(${index})"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div style="width: 100%;">
+                            ${getEmbedHtml(song.url)}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
 
-    // Memorias / Textos
+    // Textos / Memorias
     const memList = document.getElementById('memoriesListContainer');
-    memList.innerHTML = '';
-    memories.forEach((mem, index) => {
-        memList.innerHTML += `
-            <div class="memory-item">
-                <span>${mem}</span>
-                <div>
-                    <button class="delete-btn" onclick="editMemory(${index})" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                    <button class="delete-btn" onclick="deleteMemory(${index})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                </div>
-            </div>
-        `;
-    });
+    if (memList) {
+        memList.innerHTML = '';
+        if (memories.length === 0) {
+            memList.innerHTML = '<p style="color: #a0a0b0; font-size: 0.85rem;">No hay textos agregados aún.</p>';
+        } else {
+            memories.forEach((mem, index) => {
+                memList.innerHTML += `
+                    <div class="memory-item">
+                        <span style="width: 80%; text-align: left;">${mem}</span>
+                        <div>
+                            <button class="delete-btn" onclick="editMemory(${index})" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                            <button class="delete-btn" onclick="deleteMemory(${index})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    }
 }
 
 function initDynamicMedia() {
     const slider = document.getElementById('mainSlider');
-    customMedia.forEach(item => {
+    if (!slider) return;
+    slider.innerHTML = '';
+
+    if (customMedia.length === 0) {
+        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos o videos para verlos aquí 💗</div></div>`;
+        slides = document.querySelectorAll('.slide');
+        return;
+    }
+
+    customMedia.forEach((item, index) => {
         const slide = document.createElement('div');
         slide.classList.add('slide');
+        if (index === 0) slide.classList.add('active');
+
         if (item.type && item.type.startsWith('video')) {
             slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
         } else {
@@ -98,6 +142,7 @@ function initDynamicMedia() {
         }
         slider.appendChild(slide);
     });
+    slides = document.querySelectorAll('.slide');
 }
 
 // 4. CARRUSEL ALEATORIO
@@ -105,18 +150,28 @@ let slides = document.querySelectorAll('.slide');
 let currentSlide = 0;
 
 function nextSlide() {
-    if (slides.length === 0) return;
+    if (slides.length <= 1) return;
     slides[currentSlide].classList.remove('active');
     currentSlide = Math.floor(Math.random() * slides.length);
     slides[currentSlide].classList.add('active');
 }
 setInterval(nextSlide, 4500);
 
-// 5. PANEL DE ADMINISTRACIÓN (Se abre con los botones de cada sección)
-function toggleAdminPanel(section) {
-    const panel = document.getElementById('adminPanel');
-    panel.classList.toggle('hidden');
-    panel.scrollIntoView({ behavior: 'smooth' });
+// 5. MODALES Y ADMINISTRACIÓN
+function openMusicModal() {
+    renderSections();
+    document.getElementById('musicModal').classList.remove('hidden');
+}
+function closeMusicModal() {
+    document.getElementById('musicModal').classList.add('hidden');
+}
+
+function openTextsModal() {
+    renderSections();
+    document.getElementById('textsModal').classList.remove('hidden');
+}
+function closeTextsModal() {
+    document.getElementById('textsModal').classList.add('hidden');
 }
 
 function uploadMediaFile() {
@@ -136,20 +191,11 @@ function uploadMediaFile() {
         customMedia.push(mediaData);
         localStorage.setItem('user_media', JSON.stringify(customMedia));
         
-        const slider = document.getElementById('mainSlider');
-        const slide = document.createElement('div');
-        slide.classList.add('slide');
-        if (file.type.startsWith('video')) {
-            slide.innerHTML = `<video src="${e.target.result}" autoplay muted loop playsinline></video>`;
-        } else {
-            slide.innerHTML = `<img src="${e.target.result}" alt="Foto">`;
-        }
-        slider.appendChild(slide);
-        slides = document.querySelectorAll('.slide');
-        
+        initDynamicMedia();
         fileInput.value = '';
         captionInput.value = '';
         alert('¡Guardado con éxito!');
+        openGalleryModal();
     };
     reader.readAsDataURL(file);
 }
@@ -201,7 +247,7 @@ function deleteMemory(index) {
     }
 }
 
-// 6. MODALES DE GALERÍA (Incluye fotos y videos locales + subidos)
+// 6. MODAL DE GALERÍA
 let activeCustomIndex = null;
 
 function openGalleryModal() {
@@ -209,45 +255,10 @@ function openGalleryModal() {
     const grid = document.getElementById('galleryGrid');
     grid.innerHTML = '';
 
-    // Fotos fijas de la carpeta img/
-    const defaultPhotos = [
-        { url: 'img/foto.jpg', cap: 'Foto inicial', type: 'image' },
-        { url: 'img/foto2.jpg', cap: 'Recuerdo 2', type: 'image' },
-        { url: 'img/foto3.jpg', cap: 'Recuerdo 3', type: 'image' },
-        { url: 'img/foto4.jpg', cap: 'Recuerdo 4', type: 'image' },
-        { url: 'img/foto5.jpg', cap: 'Recuerdo 5', type: 'image' },
-        { url: 'img/foto6.jpg', cap: 'Recuerdo 6', type: 'image' },
-        { url: 'img/foto7.jpg', cap: 'Recuerdo 7', type: 'image' },
-        { url: 'img/foto8.jpg', cap: 'Recuerdo 8', type: 'image' }
-    ];
+    if (customMedia.length === 0) {
+        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
+    }
 
-    // Videos fijos de la carpeta video/
-    const defaultVideos = [
-        { url: 'video/video1.mp4', cap: 'Video 1', type: 'video' },
-        { url: 'video/video2.mp4', cap: 'Video 2', type: 'video' }
-    ];
-
-    // Mostrar fotos fijas
-    defaultPhotos.forEach(p => {
-        grid.innerHTML += `
-            <div class="gallery-card" onclick="openViewer('${p.url}', 'image', '${p.cap}', null)">
-                <img src="${p.url}" class="gallery-thumb" alt="Foto">
-                <div class="gallery-caption">${p.cap}</div>
-            </div>
-        `;
-    });
-
-    // Mostrar videos fijos
-    defaultVideos.forEach(v => {
-        grid.innerHTML += `
-            <div class="gallery-card" onclick="openViewer('${v.url}', 'video', '${v.cap}', null)">
-                <video src="${v.url}" class="gallery-thumb"></video>
-                <div class="gallery-caption">${v.cap} 🎥</div>
-            </div>
-        `;
-    });
-
-    // Mostrar archivos subidos por el usuario
     customMedia.forEach((item, idx) => {
         let isVideo = item.type && item.type.startsWith('video');
         let thumbHtml = isVideo 
@@ -277,6 +288,7 @@ function deleteCustomMedia(event, index) {
     if (confirm('¿Deseas eliminar este archivo de la galería?')) {
         customMedia.splice(index, 1);
         localStorage.setItem('user_media', JSON.stringify(customMedia));
+        initDynamicMedia();
         openGalleryModal();
     }
 }
@@ -302,10 +314,7 @@ function closeViewerModal() {
 }
 
 function enableEditCaption() {
-    if (activeCustomIndex === null) {
-        alert('Solo se pueden editar los textos de las fotos/videos subidos por ustedes.');
-        return;
-    }
+    if (activeCustomIndex === null) return;
     const currentCap = customMedia[activeCustomIndex].caption;
     const newCap = prompt('Editar texto de la foto/video:', currentCap);
     if (newCap !== null && newCap.trim() !== '') {
@@ -316,7 +325,6 @@ function enableEditCaption() {
     }
 }
 
-// Inicializar
+// Inicialización
 initDynamicMedia();
 renderSections();
-slides = document.querySelectorAll('.slide');
