@@ -3,109 +3,132 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nuestro Espacio 💗</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Para mi Mami 💗</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div id="heartsContainer"></div>
+    <div class="hearts-container" id="heartsContainer"></div>
 
     <div class="content">
-        <h1 class="title">Nuestra Historia 💗</h1>
+        <h1>Mami & Su Niño</h1>
+        <p class="sub-date">DESDE EL 18 DE ABRIL DE 2026</p>
 
-        <div class="counter-card">
-            <h2>Llevamos juntos:</h2>
-            <div class="counter-grid">
-                <div class="time-box"><span id="years">0</span><small>Años</small></div>
-                <div class="time-box"><span id="months">0</span><small>Meses</small></div>
-                <div class="time-box"><span id="days">0</span><small>Días</small></div>
-                <div class="time-box"><span id="hours">0</span><small>Horas</small></div>
-                <div class="time-box"><span id="minutes">0</span><small>Minutos</small></div>
-                <div class="time-box"><span id="seconds">0</span><small>Segundos</small></div>
-            </div>
-        </div>
-
+        <!-- Carrusel Principal (Aleatorio sincronizado con la nube) -->
         <div class="slider-container" id="mainSlider">
-            <div class="slide active">
-                <div class="empty-slide">Sube fotos desde tu cel para verlas aquí 💗</div>
+            <div class="slide active"><div class="empty-slide">Sube fotos o videos para verlos aquí 💗</div></div>
+        </div>
+
+        <!-- CONTADOR -->
+        <div class="counter-section">
+            <div class="counter-title">Tiempo Juntos</div>
+            <div class="grid-timer">
+                <div class="time-box"><span class="number" id="years">0</span><span class="label">Años</span></div>
+                <div class="time-box"><span class="number" id="months">0</span><span class="label">Meses</span></div>
+                <div class="time-box"><span class="number" id="days">0</span><span class="label">Días</span></div>
+                <div class="time-box"><span class="number" id="hours">0</span><span class="label">Horas</span></div>
+                <div class="time-box"><span class="number" id="minutes">0</span><span class="label">Minutos</span></div>
+                <div class="time-box"><span class="number" id="seconds">0</span><span class="label">Segundos</span></div>
             </div>
         </div>
 
-        <div class="menu-grid">
-            <button class="menu-btn" onclick="openMusicModal()">
-                <i class="fa-solid fa-music"></i> Música
-            </button>
-            <button class="menu-btn" onclick="openTextsModal()">
-                <i class="fa-solid fa-book-heart"></i> Textos
-            </button>
-            <button class="menu-btn" onclick="openGalleryModal()">
-                <i class="fa-solid fa-images"></i> Galería
-            </button>
-            <button class="menu-btn admin-toggle" onclick="toggleAdminPanel()">
-                <i class="fa-solid fa-gear"></i> Panel de Control
+        <!-- APARTADO 1: MÚSICA -->
+        <div class="section-card">
+            <div class="counter-title" style="font-size: 1.8rem;">Nuestra Música 🎵</div>
+            <button class="action-btn" onclick="openMusicModal()">
+                <i class="fa-solid fa-music"></i> Ver y Administrar Música
             </button>
         </div>
+
+        <!-- APARTADO 2: GALERÍA DE FOTOS Y VIDEOS -->
+        <div class="section-card">
+            <div class="counter-title" style="font-size: 1.8rem;">Galería de Fotos y Videos 📸</div>
+            <button class="action-btn" onclick="openGalleryModal()">
+                <i class="fa-solid fa-images"></i> Ver Todos los Recuerdos Visuales
+            </button>
+        </div>
+
+        <!-- APARTADO 3: MOMENTOS Y TEXTOS -->
+        <div class="section-card">
+            <div class="counter-title" style="font-size: 1.8rem;">Nuestros Detalles y Textos ✨</div>
+            <button class="action-btn" onclick="openTextsModal()">
+                <i class="fa-solid fa-pen-fancy"></i> Ver y Administrar Textos
+            </button>
+        </div>
+
+        <!-- PANEL DE ADMINISTRACIÓN HASTA ABAJO -->
+        <button class="toggle-admin-btn" onclick="toggleAdminPanel()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Agregar Contenido (Multimedia / Música / Textos)
+        </button>
 
         <div id="adminPanel" class="admin-panel hidden">
-            <h3>Panel de Control ⚙️</h3>
+            <h3>Panel de Contribución en la Nube 💖</h3>
             
-            <div class="admin-section">
-                <h4>Sugerir / Agregar Música (Spotify / YouTube)</h4>
-                <input type="text" id="songTitle" placeholder="Título de la canción">
-                <input type="text" id="songAddedBy" placeholder="Tu nombre / apodo">
-                <input type="text" id="songUrl" placeholder="Enlace de Spotify o YouTube">
-                <button onclick="addSong()" class="action-btn">Guardar Canción</button>
+            <!-- En tu sección de administrador para multimedia -->
+<div class="admin-box">
+    <h3>Subir Recuerdo (Foto o Video)</h3>
+    <input type="file" id="mediaFileInput" accept="image/*,video/*" style="width: 100%; margin-bottom: 10px; color: #fff; background: rgba(255,255,255,0.1); padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+    <input type="text" id="mediaCaption" placeholder="Escribe un lindo mensaje para este recuerdo..." style="width: 100%; margin-bottom: 10px; padding: 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.1); color: #fff;">
+    <button onclick="uploadMediaFile()" class="action-btn">Subir Recuerdo a la Nube 💗</button>
+</div>
+
+            <div class="admin-block">
+                <h4><i class="fa-solid fa-music"></i> Agregar Música (Spotify / YouTube)</h4>
+                <input type="text" id="songTitle" placeholder="Nombre de la canción y artista">
+                <input type="text" id="songAddedBy" placeholder="¿Quién la agrega? (ej. Su Niño 👦)">
+                <input type="url" id="songUrl" placeholder="Enlace de Spotify o YouTube">
+                <button onclick="addSong()"><i class="fa-solid fa-plus"></i> Guardar Canción</button>
             </div>
 
-            <div class="admin-section">
-                <h4>Agregar Momento / Texto</h4>
-                <textarea id="memoryText" placeholder="Escribe un recuerdo especial..."></textarea>
-                <button onclick="addMemory()" class="action-btn">Guardar Texto</button>
-            </div>
-
-            <div class="admin-section">
-                <h4>Subir Foto (Multimedia)</h4>
-                <input type="file" id="mediaFileInput" accept="image/*">
-                <input type="text" id="mediaCaption" placeholder="Texto para este recuerdo">
-                <button onclick="uploadMediaFile()" class="action-btn pink-btn">Subir a la Nube 💗</button>
+            <div class="admin-block">
+                <h4><i class="fa-solid fa-pen-fancy"></i> Agregar Momento o Texto</h4>
+                <input type="text" id="memoryText" placeholder="Escribe el detalle aquí...">
+                <button onclick="addMemory()"><i class="fa-solid fa-plus"></i> Guardar Texto</button>
             </div>
         </div>
     </div>
 
+    <!-- MODAL DE MÚSICA -->
     <div id="musicModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn" onclick="closeMusicModal()">&times;</span>
             <h2>Nuestra Música 🎵</h2>
-            <div id="musicModalList"></div>
+            <div id="musicModalList" style="margin-top: 15px;"></div>
         </div>
     </div>
 
-    <div id="textsModal" class="modal hidden">
-        <div class="modal-content">
-            <span class="close-btn" onclick="closeTextsModal()">&times;</span>
-            <h2>Nuestros Momentos ✨</h2>
-            <div id="textsModalList"></div>
-        </div>
-    </div>
-
+    <!-- MODAL DE GALERÍA COMPLETA -->
     <div id="galleryModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn" onclick="closeGalleryModal()">&times;</span>
-            <h2>Galería de Recuerdos 📸</h2>
-            <div id="galleryGrid" class="gallery-grid"></div>
+            <h2>Nuestra Galería Completa 📸</h2>
+            <div class="gallery-grid" id="galleryGrid"></div>
         </div>
     </div>
 
+    <!-- MODAL DE TEXTOS -->
+    <div id="textsModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeTextsModal()">&times;</span>
+            <h2>Nuestros Textos y Detalles ✨</h2>
+            <div id="textsModalList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <!-- MODAL VISOR INDIVIDUAL -->
     <div id="viewerModal" class="modal hidden">
         <div class="modal-content viewer-content">
             <span class="close-btn" onclick="closeViewerModal()">&times;</span>
             <div id="viewerContainer"></div>
             <p id="viewerCaptionText" class="viewer-caption"></p>
-            <button onclick="enableEditCaption()" class="edit-caption-btn"><i class="fa-solid fa-pen"></i> Editar Texto</button>
+            <button class="action-btn" style="margin-top: 10px; width: auto; padding: 6px 15px;" onclick="enableEditCaption()">Editar Texto</button>
         </div>
     </div>
 
-    <script type="module" src="script.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
