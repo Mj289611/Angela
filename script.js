@@ -1,4 +1,4 @@
-// CONFIGURACIÓN DE LA NUBE (Nuevo Contenedor Público)
+// CONFIGURACIÓN DE LA NUBE (Contenedor Público)
 const BIN_ID = '6aef8cebac6210605a760ed9';
 const API_KEY = '$2a$10$xHfX7upHfmUF69uILZpbqu5B.RSSjsnZj2goZ3GamhiOHLuKa/MUG';
 
@@ -175,7 +175,7 @@ function initDynamicMedia() {
     slider.innerHTML = '';
 
     if (!dbData.media || dbData.media.length === 0) {
-        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos o videos para verlos aquí 💗</div></div>`;
+        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos o videos desde tu cel para verlos aquí 💗</div></div>`;
         slides = document.querySelectorAll('.slide');
         return;
     }
@@ -185,7 +185,7 @@ function initDynamicMedia() {
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        if (item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i)) {
+        if (item.type === 'video' || (item.url && item.url.startsWith('data:video'))) {
             slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
         } else {
             slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
@@ -214,24 +214,42 @@ function toggleAdminPanel() {
     panel.scrollIntoView({ behavior: 'smooth' });
 }
 
+// Subir archivo multimedia directo desde la galería del celular
 async function uploadMediaFile() {
-    const urlVal = document.getElementById('mediaUrlInput').value.trim();
+    const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
 
-    if (!urlVal) return alert('Pega un enlace URL directo de imagen o video');
+    if (!fileInput.files || fileInput.files.length === 0) {
+        return alert('Por favor selecciona una foto o video de tu galería.');
+    }
 
-    let type = 'image';
-    if (urlVal.match(/\.(mp4|webm|ogg)$/i)) type = 'video';
+    const file = fileInput.files[0];
+    const reader = new FileReader();
 
-    if (!dbData.media) dbData.media = [];
-    dbData.media.push({ id: Date.now(), url: urlVal, type: type, caption: captionInput || 'Recuerdo especial 💗' });
-    
-    await saveToCloud();
-    renderEverything();
+    reader.onload = async function(event) {
+        const base64Data = event.target.result;
+        let type = 'image';
+        if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
+            type = 'video';
+        }
 
-    document.getElementById('mediaUrlInput').value = '';
-    document.getElementById('mediaCaption').value = '';
-    alert('¡Guardado con éxito en la nube!');
+        if (!dbData.media) dbData.media = [];
+        dbData.media.push({ 
+            id: Date.now(), 
+            url: base64Data, 
+            type: type, 
+            caption: captionInput || 'Recuerdo especial 💗' 
+        });
+        
+        await saveToCloud();
+        renderEverything();
+
+        fileInput.value = '';
+        document.getElementById('mediaCaption').value = '';
+        alert('¡Foto/Video subido y guardado con éxito en la nube!');
+    };
+
+    reader.readAsDataURL(file);
 }
 
 async function addSong() {
@@ -318,7 +336,7 @@ function openGalleryModal() {
         grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
     } else {
         dbData.media.forEach((item, idx) => {
-            let isVideo = item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i);
+            let isVideo = item.type === 'video' || (item.url && item.url.startsWith('data:video'));
             let thumbHtml = isVideo 
                 ? `<video src="${item.url}" class="gallery-thumb"></video>` 
                 : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
@@ -359,7 +377,7 @@ function openViewer(url, type, caption, customIndex) {
     const captionEl = document.getElementById('viewerCaptionText');
     
     container.innerHTML = '';
-    if (type === 'video' || url.match(/\.(mp4|webm|ogg)$/i)) {
+    if (type === 'video' || (url && url.startsWith('data:video'))) {
         container.innerHTML = `<video src="${url}" controls autoplay></video>`;
     } else {
         container.innerHTML = `<img src="${url}" alt="Ampliada">`;
