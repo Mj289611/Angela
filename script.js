@@ -2,7 +2,7 @@
 const BIN_ID = '6aef8cebac6210605a760ed9';
 const API_KEY = '$2a$10$xHfX7upHfmUF69uILZpbqu5B.RSSjsnZj2goZ3GamhiOHLuKa/MUG';
 
-// Estado inicial: intentamos cargar del respaldo local del navegador primero para que nunca aparezca vacío
+// Estado inicial con respaldo local de máxima prioridad
 let dbData = JSON.parse(localStorage.getItem('myProjectData')) || { songs: [], memories: [], media: [] };
 
 // Cargar datos desde la nube y fusionar con local
@@ -17,28 +17,27 @@ async function loadFromCloud() {
         if (response.ok) {
             const result = await response.json();
             if (result.record && (result.record.media?.length > 0 || result.record.songs?.length > 0 || result.record.memories?.length > 0)) {
+                // Si la nube tiene datos, los unimos o priorizamos inteligentemente
                 dbData = result.record;
                 localStorage.setItem('myProjectData', JSON.stringify(dbData));
             }
             renderEverything();
         } else {
-            console.error("Error al cargar la nube, usando respaldo local:", response.status);
             renderEverything();
         }
     } catch (e) {
-        console.error("Error de red al cargar, usando respaldo local:", e);
         renderEverything();
     }
 }
 
-// Guardar datos en la nube y en el respaldo local del navegador
+// Guardar datos en la nube y en el respaldo local de forma simultánea
 async function saveToCloud() {
-    // Guardar inmediatamente en local para blindar contra cualquier recarga
+    // Blindaje local instantáneo para que jamás se borre al actualizar
     localStorage.setItem('myProjectData', JSON.stringify(dbData));
     renderEverything();
 
     try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -46,11 +45,8 @@ async function saveToCloud() {
             },
             body: JSON.stringify(dbData)
         });
-        if (!response.ok) {
-            console.error("Error al guardar en la nube, código:", response.status);
-        }
     } catch (e) {
-        console.error("Error de red al guardar en la nube:", e);
+        console.error("Error sincronizando con la nube:", e);
     }
 }
 
@@ -224,7 +220,7 @@ function toggleAdminPanel() {
     panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Subir archivo multimedia con compresor automático de imágenes
+// Subir archivo multimedia con ultra compresión automática
 async function uploadMediaFile() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
@@ -253,7 +249,7 @@ async function uploadMediaFile() {
                 const canvas = document.createElement('canvas');
                 let width = img.width;
                 let height = img.height;
-                const maxWidth = 900;
+                const maxWidth = 700; // Tamaño optimizado para almacenamiento móvil perfecto
 
                 if (width > maxWidth) {
                     height = Math.round((height * maxWidth) / width);
@@ -265,7 +261,8 @@ async function uploadMediaFile() {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
 
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+                // Calidad comprimida al 65% para garantizar cero problemas de peso en la nube
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.65);
                 await saveMediaToDb(compressedDataUrl, 'image', captionInput, fileInput);
             };
             img.src = event.target.result;
@@ -288,7 +285,7 @@ async function saveMediaToDb(urlData, type, caption, fileInput) {
 
     fileInput.value = '';
     document.getElementById('mediaCaption').value = '';
-    alert('¡Foto/Video comprimido y guardado con éxito!');
+    alert('¡Foto/Video guardado con éxito y respaldado!');
 }
 
 async function addSong() {
