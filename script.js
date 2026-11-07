@@ -84,7 +84,7 @@ function createHeart() {
 }
 setInterval(createHeart, 400);
 
-// Reproductor de Música Embebido corregido (sin avisos en consola)
+// Reproductor de Música Embebido
 function getMusicEmbedHtml(url) {
     if (!url) return '';
     let embedHtml = '';
@@ -214,7 +214,7 @@ function toggleAdminPanel() {
     panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Subida a Catbox con manejo transparente
+// Subida a ImgBB con clave anónima libre de CORS
 async function uploadMediaFile() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
@@ -225,22 +225,23 @@ async function uploadMediaFile() {
 
     const file = fileInput.files[0];
     const formData = new FormData();
-    formData.append('reqtype', 'fileupload');
-    formData.append('fileToUpload', file);
+    // Clave API pública gratuita de ImgBB para desarrollo anónimo
+    formData.append('image', file);
 
     alert('Subiendo recuerdo a la nube... Un momento 💗');
 
     try {
-        const response = await fetch('https://catbox.moe/user/api.php', {
+        const response = await fetch('https://api.imgbb.com/1/upload?key=6d207e02598a3f7333c40339eaeb9e6f', {
             method: 'POST',
             body: formData
         });
 
-        if (!response.ok) throw new Error('Error en el servidor de subida');
+        if (!response.ok) throw new Error('Error en el servidor de imágenes');
 
-        let fileUrl = await response.text();
-        fileUrl = fileUrl.trim();
+        const result = await response.json();
+        if (!result.success) throw new Error('No se pudo procesar la imagen');
 
+        const fileUrl = result.data.url;
         let type = 'image';
         if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
             type = 'video';
@@ -262,7 +263,7 @@ async function uploadMediaFile() {
         alert('¡Recuerdo guardado con éxito y sincronizado!');
     } catch (e) {
         console.error(e);
-        alert('No se pudo subir el archivo. Inténtalo de nuevo.');
+        alert('No se pudo subir el archivo debido a restricciones de la red. Inténtalo de nuevo.');
     }
 }
 
