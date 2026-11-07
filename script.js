@@ -38,23 +38,25 @@ function createHeart() {
 }
 setInterval(createHeart, 400);
 
-// 3. DATOS Y LOCALSTORAGE (100% Dinámicos)
+// 3. DATOS Y LOCALSTORAGE (100% Dinámicos, sin carpetas fijas)
 let songs = JSON.parse(localStorage.getItem('user_songs')) || [];
 let memories = JSON.parse(localStorage.getItem('user_memories')) || [];
 let customMedia = JSON.parse(localStorage.getItem('user_media')) || [];
 
-// Convertir links de Spotify o YouTube a reproductores embebibles
-function getEmbedHtml(url) {
+// Convertir links de Spotify o YouTube a reproductor embebido + botón oficial
+function getMusicEmbedHtml(url) {
     if (!url) return '';
+    let embedHtml = '';
+    
     // Spotify
     if (url.includes('spotify.com')) {
         const match = url.match(/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/);
         if (match) {
-            return `<iframe src="https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy"></iframe>`;
+            embedHtml = `<iframe src="https://open.spotify.com/embed/${match[1]}/${match[2]}?utm_source=generator&theme=0" width="100%" height="80" frameBorder="0" allowfullscreen="" allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" style="border-radius:12px; margin-top:8px;"></iframe>`;
         }
     }
     // YouTube
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
+    else if (url.includes('youtube.com') || url.includes('youtu.be')) {
         let videoId = '';
         if (url.includes('youtu.be/')) {
             videoId = url.split('youtu.be/')[1]?.split('?')[0];
@@ -64,10 +66,16 @@ function getEmbedHtml(url) {
             videoId = url.split('embed/')[1]?.split('?')[0];
         }
         if (videoId) {
-            return `<iframe width="100%" height="80" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+            embedHtml = `<iframe width="100%" height="80" src="https://www.youtube.com/embed/${videoId}" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen style="border-radius:12px; margin-top:8px;"></iframe>`;
         }
     }
-    return `<a href="${url}" target="_blank" class="music-btn" style="display:inline-block; margin-top:5px;">Escuchar Enlace</a>`;
+
+    return `
+        ${embedHtml}
+        <div style="margin-top: 8px; text-align: right;">
+            <a href="${url}" target="_blank" class="music-btn"><i class="fa-solid fa-external-link-alt"></i> Abrir en App / Página Oficial</a>
+        </div>
+    `;
 }
 
 function renderSections() {
@@ -89,7 +97,7 @@ function renderSections() {
                             <button class="delete-btn" onclick="deleteSong(${index})"><i class="fa-solid fa-trash"></i></button>
                         </div>
                         <div style="width: 100%;">
-                            ${getEmbedHtml(song.url)}
+                            ${getMusicEmbedHtml(song.url)}
                         </div>
                     </div>
                 `;
@@ -157,21 +165,11 @@ function nextSlide() {
 }
 setInterval(nextSlide, 4500);
 
-// 5. MODALES Y ADMINISTRACIÓN
-function openMusicModal() {
-    renderSections();
-    document.getElementById('musicModal').classList.remove('hidden');
-}
-function closeMusicModal() {
-    document.getElementById('musicModal').classList.add('hidden');
-}
-
-function openTextsModal() {
-    renderSections();
-    document.getElementById('textsModal').classList.remove('hidden');
-}
-function closeTextsModal() {
-    document.getElementById('textsModal').classList.add('hidden');
+// 5. ADMINISTRACIÓN
+function toggleAdminPanel() {
+    const panel = document.getElementById('adminPanel');
+    panel.classList.toggle('hidden');
+    panel.scrollIntoView({ behavior: 'smooth' });
 }
 
 function uploadMediaFile() {
@@ -195,7 +193,6 @@ function uploadMediaFile() {
         fileInput.value = '';
         captionInput.value = '';
         alert('¡Guardado con éxito!');
-        openGalleryModal();
     };
     reader.readAsDataURL(file);
 }
@@ -211,6 +208,7 @@ function addSong() {
     renderSections();
     document.getElementById('songTitle').value = '';
     document.getElementById('songUrl').value = '';
+    alert('¡Canción guardada con éxito!');
 }
 
 function deleteSong(index) {
@@ -228,6 +226,7 @@ function addMemory() {
     localStorage.setItem('user_memories', JSON.stringify(memories));
     renderSections();
     document.getElementById('memoryText').value = '';
+    alert('¡Texto guardado con éxito!');
 }
 
 function editMemory(index) {
@@ -247,7 +246,7 @@ function deleteMemory(index) {
     }
 }
 
-// 6. MODAL DE GALERÍA
+// 6. MODAL DE GALERÍA COMPLETA
 let activeCustomIndex = null;
 
 function openGalleryModal() {
