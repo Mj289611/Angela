@@ -1,52 +1,80 @@
-// CONFIGURACIÓN DE LA NUBE (Contenedor Público)
-const BIN_ID = '6aef8cebac6210605a760ed9';
-const API_KEY = '$2a$10$xHfX7upHfmUF69uILZpbqu5B.RSSjsnZj2goZ3GamhiOHLuKa/MUG';
+// CONFIGURACIÓN OFICIAL DE FIREBASE
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Estado inicial con respaldo local de máxima prioridad
-let dbData = JSON.parse(localStorage.getItem('myProjectData')) || { songs: [], memories: [], media: [] };
+const firebaseConfig = {
+    apiKey: "AIzaSyCMuz81GDT4EJKrGHYIfNQAz0y58xtauuQ",
+    authDomain: "fotos-7897e.firebaseapp.com",
+    projectId: "fotos-7897e",
+    storageBucket: "fotos-7897e.appspot.com",
+    messagingSenderId: "652419052512",
+    appId: "1:652419052512:web:84201d2bdd6c274b097185",
+    measurementId: "G-T0PJ06J291"
+};
 
-// Cargar datos desde la nube o respaldo local
-async function loadFromCloud() {
-    try {
-        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
-            method: 'GET',
-            headers: {
-                'X-Master-Key': API_KEY
-            }
-        });
-        if (response.ok) {
-            const result = await response.json();
-            if (result.record && (result.record.media?.length > 0 || result.record.songs?.length > 0 || result.record.memories?.length > 0)) {
-                // Si la nube tiene datos, los unimos para no perder nada
-                dbData = result.record;
-                localStorage.setItem('myProjectData', JSON.stringify(dbData));
-            }
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// DATOS INICIALES RECUPERADOS (Canciones y nota especial)
+const defaultData = {
+    songs: [
+        {
+            title: "M.A.I ",
+            addedBy: "Niño",
+            url: "https://open.spotify.com/track/35ttE4t8lQZA2vuCYDg4G7?si=Jw2UOhB9Tx6jE1yuF3FhCw&utm_source=copy-link"
+        },
+        {
+            title: "Enamorado tuyo",
+            addedBy: "Niño",
+            url: "https://open.spotify.com/track/35LdDKNMwvKftENaj1WIwF?si=FFVhpwSzTXG-jPfCoY93hg&utm_source=copy-link "
+        },
+        {
+            title: "Por ti",
+            addedBy: "Niño",
+            url: "https://open.spotify.com/track/3lnaMCNOqHZHzUYdHP6TxA?si=UrZZBqMCSZOLHde_2gaGOA&utm_source=copy-link"
+        },
+        {
+            title: "Vamonos a marte ",
+            addedBy: "Niño ",
+            url: "https://open.spotify.com/track/1qBdJHxR2qY0dFad0ZI8sj?si=aoUBCJ6mRPGyut4228HbjQ&utm_source=copy-link"
+        },
+        {
+            title: "Querer querernos ",
+            addedBy: "Niño ",
+            url: "https://open.spotify.com/track/1pzmfNz1I4kgkcKZTPbKGE?si=q92UtGJFROepYjp8tXqPow&utm_source=copy-link "
+        }
+    ],
+    memories: [
+        "Mami, siempfe te amare, me doy cuenta que te amo cada día, en cada momento del día pienso en ti, duermo y sueño contigo, te necesito musho, eres mi lugar seguro, eres mi mami, quien cura mi corazón, grachas por tu amor, grachas x amarme cada día mami, eres y seras siempre lo mejor que me ha pasado en esta vida mami, eres hermosha, me encantan tus cachetitos, me encanta y enamora que seas tikitita, amo como te ves enojada, cuando me haces caritas, es lo mejor, me hace feliz eso de ti, con tu amor y estando a mi lado puedes transformarme, me haces feliz, cada parte de ti me ayuda a mejorar, sin ti no sería lo que soy, no lograría der mejor, me ayudas musho mami, eres lo mejor de este mundo, tu niño hemosho sabe muy bien eso, estoy loco x ti de amor, te amo musho pero musho mamii🥺💗"
+    ],
+    media: []
+};
+
+let dbData = defaultData;
+const DOC_ID = "mainData";
+
+// Sincronización en Tiempo Real con Firestore
+function initRealtimeSync() {
+    onSnapshot(doc(db, "appData", DOC_ID), (docSnap) => {
+        if (docSnap.exists()) {
+            dbData = docSnap.data();
             renderEverything();
         } else {
-            renderEverything();
+            saveToCloud();
         }
-    } catch (e) {
-        renderEverything();
-    }
+    }, (error) => {
+        console.error("Error en tiempo real:", error);
+    });
 }
 
-// Guardar datos en la nube de forma segura y con respaldo local anti-bloqueo
+// Guardar datos en Firestore
 async function saveToCloud() {
-    // Blindaje local instantáneo para evitar bloqueos
-    localStorage.setItem('myProjectData', JSON.stringify(dbData));
-    renderEverything();
-
     try {
-        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': API_KEY
-            },
-            body: JSON.stringify(dbData)
-        });
+        await setDoc(doc(db, "appData", DOC_ID), dbData);
+        renderEverything();
     } catch (e) {
-        console.error("Aviso de sincronización en nube:", e);
+        console.error("Error guardando en la nube:", e);
     }
 }
 
@@ -144,13 +172,20 @@ function renderMusicModalList() {
                         <b>${song.title}</b>
                         <span style="display: block; font-size: 0.75rem; color: #ffb3c1;">Agregado por: ${song.addedBy}</span>
                     </div>
-                    <button class="delete-btn" onclick="deleteSong(${index})"><i class="fa-solid fa-trash"></i></button>
+                    <button class="delete-btn" data-index="${index}"><i class="fa-solid fa-trash"></i></button>
                 </div>
                 <div style="width: 100%;">
                     ${getMusicEmbedHtml(song.url)}
                 </div>
             </div>
         `;
+    });
+
+    document.querySelectorAll('.music-card .delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = e.currentTarget.getAttribute('data-index');
+            deleteSong(parseInt(idx));
+        });
     });
 }
 
@@ -167,11 +202,25 @@ function renderTextsModalList() {
             <div class="memory-item">
                 <span style="width: 80%; text-align: left;">${mem}</span>
                 <div>
-                    <button class="delete-btn" onclick="editMemory(${index})" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                    <button class="delete-btn" onclick="deleteMemory(${index})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    <button class="edit-btn" data-index="${index}" title="Editar"><i class="fa-solid fa-pen"></i></button>
+                    <button class="delete-btn" data-index="${index}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
                 </div>
             </div>
         `;
+    });
+
+    document.querySelectorAll('.memory-item .edit-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = e.currentTarget.getAttribute('data-index');
+            editMemory(parseInt(idx));
+        });
+    });
+
+    document.querySelectorAll('.memory-item .delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const idx = e.currentTarget.getAttribute('data-index');
+            deleteMemory(parseInt(idx));
+        });
     });
 }
 
@@ -181,7 +230,7 @@ function initDynamicMedia() {
     slider.innerHTML = '';
 
     if (!dbData.media || dbData.media.length === 0) {
-        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos o videos desde tu cel para verlos aquí 💗</div></div>`;
+        slider.innerHTML = `<div class="slide active"><div class="empty-slide">Sube fotos desde tu cel para verlas aquí 💗</div></div>`;
         slides = document.querySelectorAll('.slide');
         return;
     }
@@ -191,11 +240,7 @@ function initDynamicMedia() {
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        if (item.type === 'video' || (item.url && item.url.startsWith('data:video'))) {
-            slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
-        } else {
-            slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
-        }
+        slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
         slider.appendChild(slide);
     });
     slides = document.querySelectorAll('.slide');
@@ -213,15 +258,15 @@ function nextSlide() {
 }
 setInterval(nextSlide, 4500);
 
-// Panel Admin (Hasta abajo)
-function toggleAdminPanel() {
+// Panel Admin
+window.toggleAdminPanel = function() {
     const panel = document.getElementById('adminPanel');
     panel.classList.toggle('hidden');
     panel.scrollIntoView({ behavior: 'smooth' });
-}
+};
 
-// Subida local optimizada con compresión ligera para permitir múltiples fotos
-async function uploadMediaFile() {
+// Subida a Firestore optimizada con compresión inteligente
+window.uploadMediaFile = async function() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
 
@@ -230,64 +275,54 @@ async function uploadMediaFile() {
     }
 
     const file = fileInput.files[0];
-    let type = 'image';
-    if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
-        type = 'video';
-    }
-
-    alert('Optimizando y guardando foto... Un momento 💗');
-
-    if (type === 'video') {
-        alert('Los videos muy pesados pueden saturar el almacenamiento. Te recomendamos usar fotos.');
+    if (file.type.startsWith('video')) {
+        alert('Por el momento los videos pesan demasiado para este espacio gratuito. Te recomendamos usar fotos hermosas.');
         return;
-    } else {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = async function() {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                const maxWidth = 500; // Tamaño optimizado para almacenar múltiples fotos sin problemas de espacio
-
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // Comprimir al 55% para garantizar que puedas subir muchas fotos sin error 403
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.55);
-                await saveMediaToDb(compressedDataUrl, 'image', captionInput, fileInput);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
     }
-}
 
-async function saveMediaToDb(urlData, type, caption, fileInput) {
-    if (!dbData.media) dbData.media = [];
-    dbData.media.push({ 
-        id: Date.now(), 
-        url: urlData, 
-        type: type, 
-        caption: caption || 'Recuerdo especial 💗' 
-    });
-    
-    await saveToCloud();
-    renderEverything();
+    alert('Optimizando foto y sincronizando... Un momento 💗');
 
-    fileInput.value = '';
-    document.getElementById('mediaCaption').value = '';
-    alert('¡Foto guardada con éxito! Ya puedes subir más 💗');
-}
+    const reader = new FileReader();
+    reader.onload = function(event) {
+        const img = new Image();
+        img.onload = async function() {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const maxWidth = 450; 
 
-async function addSong() {
+            if (width > maxWidth) {
+                height = Math.round((height * maxWidth) / width);
+                width = maxWidth;
+            }
+
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+
+            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.50);
+
+            if (!dbData.media) dbData.media = [];
+            dbData.media.push({ 
+                id: Date.now(), 
+                url: compressedDataUrl, 
+                type: 'image', 
+                caption: captionInput || 'Recuerdo especial 💗' 
+            });
+            
+            await saveToCloud();
+
+            fileInput.value = '';
+            document.getElementById('mediaCaption').value = '';
+            alert('¡Foto guardada y sincronizada con éxito!');
+        };
+        img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+};
+
+window.addSong = async function() {
     const title = document.getElementById('songTitle').value;
     const addedBy = document.getElementById('songAddedBy').value || 'Amor';
     const url = document.getElementById('songUrl').value;
@@ -297,22 +332,19 @@ async function addSong() {
     dbData.songs.push({ title, addedBy, url });
     
     await saveToCloud();
-    renderMusicModalList();
-
     document.getElementById('songTitle').value = '';
     document.getElementById('songUrl').value = '';
     alert('¡Canción guardada con éxito!');
-}
+};
 
 async function deleteSong(index) {
     if (confirm('¿Seguro que deseas eliminar esta canción?')) {
         dbData.songs.splice(index, 1);
         await saveToCloud();
-        renderMusicModalList();
     }
 }
 
-async function addMemory() {
+window.addMemory = async function() {
     const text = document.getElementById('memoryText').value;
     if (!text) return alert('Escribe un texto');
     
@@ -320,18 +352,15 @@ async function addMemory() {
     dbData.memories.push(text);
     
     await saveToCloud();
-    renderTextsModalList();
-
     document.getElementById('memoryText').value = '';
     alert('¡Texto guardado con éxito!');
-}
+};
 
 async function editMemory(index) {
     const newText = prompt('Edita el texto del momento:', dbData.memories[index]);
     if (newText !== null && newText.trim() !== '') {
         dbData.memories[index] = newText.trim();
         await saveToCloud();
-        renderTextsModalList();
     }
 }
 
@@ -339,48 +368,42 @@ async function deleteMemory(index) {
     if (confirm('¿Seguro que deseas eliminar este momento?')) {
         dbData.memories.splice(index, 1);
         await saveToCloud();
-        renderTextsModalList();
     }
 }
 
 // Modales
-function openMusicModal() {
+window.openMusicModal = function() {
     renderMusicModalList();
     document.getElementById('musicModal').classList.remove('hidden');
-}
-function closeMusicModal() {
+};
+window.closeMusicModal = function() {
     document.getElementById('musicModal').classList.add('hidden');
-}
+};
 
-function openTextsModal() {
+window.openTextsModal = function() {
     renderTextsModalList();
+    document.getElementById('textsModal').classList.remove('hidden');
+};
+window.closeTextsModal = function() {
     document.getElementById('textsModal').classList.add('hidden');
-}
-function closeTextsModal() {
-    document.getElementById('textsModal').classList.add('hidden');
-}
+};
 
 let activeCustomIndex = null;
 
-function openGalleryModal() {
+window.openGalleryModal = function() {
     const modal = document.getElementById('galleryModal');
     const grid = document.getElementById('galleryGrid');
     grid.innerHTML = '';
 
     if (!dbData.media || dbData.media.length === 0) {
-        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
+        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos subidas todavía.</p>';
     } else {
         dbData.media.forEach((item, idx) => {
-            let isVideo = item.type === 'video' || (item.url && item.url.startsWith('data:video'));
-            let thumbHtml = isVideo 
-                ? `<video src="${item.url}" class="gallery-thumb"></video>` 
-                : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
-            
             grid.innerHTML += `
                 <div class="gallery-card">
-                    <button class="gallery-delete-btn" onclick="deleteCustomMedia(event, ${idx})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                    <div onclick="openViewer('${item.url}', '${item.type || 'image'}', '${item.caption}', ${idx})">
-                        ${thumbHtml}
+                    <button class="gallery-delete-btn" data-index="${idx}" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
+                    <div class="gallery-item-click" data-url="${item.url}" data-caption="${item.caption}" data-index="${idx}">
+                        <img src="${item.url}" class="gallery-thumb" alt="Subida">
                         <div class="gallery-caption">${item.caption}</div>
                     </div>
                 </div>
@@ -388,19 +411,34 @@ function openGalleryModal() {
         });
     }
 
+    document.querySelectorAll('.gallery-delete-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const idx = e.currentTarget.getAttribute('data-index');
+            deleteCustomMedia(parseInt(idx));
+        });
+    });
+
+    document.querySelectorAll('.gallery-item-click').forEach(item => {
+        item.addEventListener('click', (e) => {
+            const url = e.currentTarget.getAttribute('data-url');
+            const caption = e.currentTarget.getAttribute('data-caption');
+            const idx = e.currentTarget.getAttribute('data-index');
+            openViewer(url, 'image', caption, parseInt(idx));
+        });
+    });
+
     modal.classList.remove('hidden');
-}
+};
 
-function closeGalleryModal() {
+window.closeGalleryModal = function() {
     document.getElementById('galleryModal').classList.add('hidden');
-}
+};
 
-async function deleteCustomMedia(event, index) {
-    event.stopPropagation();
-    if (confirm('¿Deseas eliminar este archivo de la galería?')) {
+async function deleteCustomMedia(index) {
+    if (confirm('¿Deseas eliminar esta foto de la galería?')) {
         dbData.media.splice(index, 1);
         await saveToCloud();
-        initDynamicMedia();
         openGalleryModal();
     }
 }
@@ -411,31 +449,26 @@ function openViewer(url, type, caption, customIndex) {
     const container = document.getElementById('viewerContainer');
     const captionEl = document.getElementById('viewerCaptionText');
     
-    container.innerHTML = '';
-    if (type === 'video' || (url && url.startsWith('data:video'))) {
-        container.innerHTML = `<video src="${url}" controls autoplay></video>`;
-    } else {
-        container.innerHTML = `<img src="${url}" alt="Ampliada">`;
-    }
+    container.innerHTML = `<img src="${url}" alt="Ampliada">`;
     captionEl.innerText = caption;
     viewerModal.classList.remove('hidden');
 }
 
-function closeViewerModal() {
+window.closeViewerModal = function() {
     document.getElementById('viewerModal').classList.add('hidden');
-}
+};
 
-async function enableEditCaption() {
+window.enableEditCaption = async function() {
     if (activeCustomIndex === null) return;
     const currentCap = dbData.media[activeCustomIndex].caption;
-    const newCap = prompt('Editar texto de la foto/video:', currentCap);
+    const newCap = prompt('Editar texto de la foto:', currentCap);
     if (newCap !== null && newCap.trim() !== '') {
         dbData.media[activeCustomIndex].caption = newCap.trim();
         await saveToCloud();
         document.getElementById('viewerCaptionText').innerText = newCap.trim();
         openGalleryModal();
     }
-}
+};
 
-// Cargar todo al abrir la página
-loadFromCloud();
+// Iniciar sincronización en tiempo real
+initRealtimeSync();
