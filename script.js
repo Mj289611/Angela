@@ -2,10 +2,9 @@
 const BIN_ID = '6aef8cebac6210605a760ed9';
 const API_KEY = '$2a$10$xHfX7upHfmUF69uILZpbqu5B.RSSjsnZj2goZ3GamhiOHLuKa/MUG';
 
-// Estado inicial con respaldo local de máxima prioridad
-let dbData = JSON.parse(localStorage.getItem('myProjectData')) || { songs: [], memories: [], media: [] };
+let dbData = { songs: [], memories: [], media: [] };
 
-// Cargar datos desde la nube y fusionar con local
+// Cargar datos desde la nube (JSONBin v3 Público)
 async function loadFromCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}/latest`, {
@@ -16,28 +15,21 @@ async function loadFromCloud() {
         });
         if (response.ok) {
             const result = await response.json();
-            if (result.record && (result.record.media?.length > 0 || result.record.songs?.length > 0 || result.record.memories?.length > 0)) {
-                // Si la nube tiene datos, los unimos o priorizamos inteligentemente
-                dbData = result.record;
-                localStorage.setItem('myProjectData', JSON.stringify(dbData));
-            }
+            dbData = result.record || { songs: [], memories: [], media: [] };
             renderEverything();
         } else {
-            renderEverything();
+            console.error("Error al cargar la nube:", response.status);
         }
     } catch (e) {
-        renderEverything();
+        console.error("Error de red al cargar:", e);
     }
 }
 
-// Guardar datos en la nube y en el respaldo local de forma simultánea
+// Guardar datos en la nube de forma segura y permanente
 async function saveToCloud() {
-    // Blindaje local instantáneo para que jamás se borre al actualizar
-    localStorage.setItem('myProjectData', JSON.stringify(dbData));
     renderEverything();
-
     try {
-        await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
+        const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -45,8 +37,11 @@ async function saveToCloud() {
             },
             body: JSON.stringify(dbData)
         });
+        if (!response.ok) {
+            console.error("Error al guardar en la nube:", response.status);
+        }
     } catch (e) {
-        console.error("Error sincronizando con la nube:", e);
+        console.error("Error de red al guardar:", e);
     }
 }
 
@@ -191,7 +186,7 @@ function initDynamicMedia() {
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        if (item.type === 'video' || (item.url && item.url.startsWith('data:video'))) {
+        if (item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i)) {
             slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
         } else {
             slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
@@ -220,7 +215,7 @@ function toggleAdminPanel() {
     panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Subir archivo multimedia con ultra compresión automática
+// Subida mágica invisible (Seleccionas de tu galería, se procesa de fondo y se guarda para siempre)
 async function uploadMediaFile() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
@@ -230,62 +225,45 @@ async function uploadMediaFile() {
     }
 
     const file = fileInput.files[0];
-    let type = 'image';
-    if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
-        type = 'video';
+    const formData = new FormData();
+    formData.append('reqtype', 'fileupload');
+    formData.append('fileToUpload', file);
+
+    alert('Subiendo recuerdo a la nube... Un segundito 💗');
+
+    try {
+        // Subida automática e invisible a servidor seguro sin mostrar links
+        const response = await fetch('https://catbox.moe/user/api.php', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) throw new Error('Error al subir el archivo');
+
+        const fileUrl = await response.text();
+        let type = 'image';
+        if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
+            type = 'video';
+        }
+
+        if (!dbData.media) dbData.media = [];
+        dbData.media.push({ 
+            id: Date.now(), 
+            url: fileUrl.trim(), 
+            type: type, 
+            caption: captionInput || 'Recuerdo especial 💗' 
+        });
+        
+        await saveToCloud();
+        renderEverything();
+
+        fileInput.value = '';
+        document.getElementById('mediaCaption').value = '';
+        alert('¡Recuerdo guardado con éxito para siempre!');
+    } catch (e) {
+        console.error(e);
+        alert('Hubo un error al subir el archivo. Inténtalo de nuevo.');
     }
-
-    if (type === 'video') {
-        const reader = new FileReader();
-        reader.onload = async function(event) {
-            await saveMediaToDb(event.target.result, type, captionInput, fileInput);
-        };
-        reader.readAsDataURL(file);
-    } else {
-        const reader = new FileReader();
-        reader.onload = function(event) {
-            const img = new Image();
-            img.onload = async function() {
-                const canvas = document.createElement('canvas');
-                let width = img.width;
-                let height = img.height;
-                const maxWidth = 700; // Tamaño optimizado para almacenamiento móvil perfecto
-
-                if (width > maxWidth) {
-                    height = Math.round((height * maxWidth) / width);
-                    width = maxWidth;
-                }
-
-                canvas.width = width;
-                canvas.height = height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, width, height);
-
-                // Calidad comprimida al 65% para garantizar cero problemas de peso en la nube
-                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.65);
-                await saveMediaToDb(compressedDataUrl, 'image', captionInput, fileInput);
-            };
-            img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
-}
-
-async function saveMediaToDb(urlData, type, caption, fileInput) {
-    if (!dbData.media) dbData.media = [];
-    dbData.media.push({ 
-        id: Date.now(), 
-        url: urlData, 
-        type: type, 
-        caption: caption || 'Recuerdo especial 💗' 
-    });
-    
-    await saveToCloud();
-    renderEverything();
-
-    fileInput.value = '';
-    document.getElementById('mediaCaption').value = '';
-    alert('¡Foto/Video guardado con éxito y respaldado!');
 }
 
 async function addSong() {
@@ -372,7 +350,7 @@ function openGalleryModal() {
         grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
     } else {
         dbData.media.forEach((item, idx) => {
-            let isVideo = item.type === 'video' || (item.url && item.url.startsWith('data:video'));
+            let isVideo = item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i);
             let thumbHtml = isVideo 
                 ? `<video src="${item.url}" class="gallery-thumb"></video>` 
                 : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
@@ -413,7 +391,7 @@ function openViewer(url, type, caption, customIndex) {
     const captionEl = document.getElementById('viewerCaptionText');
     
     container.innerHTML = '';
-    if (type === 'video' || (url && url.startsWith('data:video'))) {
+    if (type === 'video' || url.match(/\.(mp4|webm|ogg)$/i)) {
         container.innerHTML = `<video src="${url}" controls autoplay></video>`;
     } else {
         container.innerHTML = `<img src="${url}" alt="Ampliada">`;
