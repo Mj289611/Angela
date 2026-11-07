@@ -39,7 +39,9 @@
         <!-- APARTADO 1: MÚSICA -->
         <div class="section-card">
             <div class="counter-title" style="font-size: 1.8rem;">Nuestra Música 🎵</div>
-            <div id="musicListContainer"></div>
+            <button class="action-btn" onclick="openMusicModal()">
+                <i class="fa-solid fa-music"></i> Ver y Administrar Música
+            </button>
         </div>
 
         <!-- APARTADO 2: GALERÍA DE FOTOS Y VIDEOS -->
@@ -53,14 +55,9 @@
         <!-- APARTADO 3: MOMENTOS Y TEXTOS -->
         <div class="section-card">
             <div class="counter-title" style="font-size: 1.8rem;">Nuestros Detalles y Textos ✨</div>
-            <div id="memoriesListContainer"></div>
-        </div>
-
-        <!-- CARTA DE AMOR -->
-        <div class="love-letter">
-            <p>Mami, siempre te amaré, me doy cuenta que te amo cada día, en cada momento del día pienso en ti, duermo y sueño contigo, te necesito musho, eres mi lugar seguro, eres mi mami, quien cura mi corazón, grachas por tu amor, grachas x amarme cada día mami, eres y seras siempre lo mejor que me ha pasado en esta vida mami.</p>
-            <p>Eres hermosha, me encantan tus cachetitos, me encanta y enamora que seas tikitita, amo como te ves enojada, cuando me haces caritas, es lo mejor, me hace feliz eso de ti, con tu amor y estando a mi lado puedes transformarme, me haces feliz, cada parte de ti me ayuda a mejorar, sin ti no sería lo que soy, no lograría ser mejor, me ayudas musho mami.</p>
-            <p>Eres lo mejor de este mundo, tu niño hemosho sabe muy bien eso, estoy loco x ti de amor, te amo musho pero musho mamii, recuerda que con solo estar a mi lado me ayudas musho, imaginate con amarme, escucharme, amarme como soy, ser tu niño y tu mi mami, y ser mi lugar seguro me hace muy feliz 🥺💗</p>
+            <button class="action-btn" onclick="openTextsModal()">
+                <i class="fa-solid fa-pen-fancy"></i> Ver y Administrar Textos
+            </button>
         </div>
 
         <!-- PANEL DE ADMINISTRACIÓN HASTA ABAJO -->
@@ -72,8 +69,9 @@
             <h3>Panel de Contribución 💖</h3>
             
             <div class="admin-block">
-                <h4><i class="fa-solid fa-photo-film"></i> Subir Foto o Video</h4>
-                <input type="file" id="mediaInput" accept="image/*,video/*">
+                <h4><i class="fa-solid fa-photo-film"></i> Subir Foto o Video (Archivo o Enlace URL)</h4>
+                <input type="file" id="mediaInput" accept="image/*,video/*" style="margin-bottom: 8px;">
+                <input type="text" id="mediaUrlInput" placeholder="O pega un enlace URL directo de imagen/video..." style="margin-bottom: 8px;">
                 <input type="text" id="mediaCaption" placeholder="Dedicatoria o texto para este archivo...">
                 <button onclick="uploadMediaFile()"><i class="fa-solid fa-upload"></i> Guardar en Galería</button>
             </div>
@@ -94,12 +92,30 @@
         </div>
     </div>
 
+    <!-- MODAL DE MÚSICA -->
+    <div id="musicModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeMusicModal()">&times;</span>
+            <h2>Nuestra Música 🎵</h2>
+            <div id="musicModalList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
     <!-- MODAL DE GALERÍA COMPLETA -->
     <div id="galleryModal" class="modal hidden">
         <div class="modal-content">
             <span class="close-btn" onclick="closeGalleryModal()">&times;</span>
             <h2>Nuestra Galería Completa 📸</h2>
             <div class="gallery-grid" id="galleryGrid"></div>
+        </div>
+    </div>
+
+    <!-- MODAL DE TEXTOS -->
+    <div id="textsModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeTextsModal()">&times;</span>
+            <h2>Nuestros Textos y Detalles ✨</h2>
+            <div id="textsModalList" style="margin-top: 15px;"></div>
         </div>
     </div>
 
