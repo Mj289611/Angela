@@ -1,6 +1,6 @@
-// CONFIGURACIÓN DE LA NUBE (JSONBin.io)
-const BIN_ID = '6aef8371ffd516053afb36b'; 
-const API_KEY = '$2a$10$wN9vQZlQ0...'; // <--- PEGA AQUÍ TU MASTER KEY REAL DE JSONBIN
+// CONFIGURACIÓN DE LA NUBE (Con tus credenciales reales integradas)
+const BIN_ID = '6aef8371ffd516053afb36b';
+const API_KEY = '$2a$10$dGxKRFWMfXPaNzK..gbnsO.dWduFYYzTwgu995dG1logC73FZKFiG';
 
 let dbData = { songs: [], memories: [], media: [] };
 
