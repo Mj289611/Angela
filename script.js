@@ -214,7 +214,7 @@ function toggleAdminPanel() {
     panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Subir archivo multimedia directo desde la galería del celular
+// Subir archivo multimedia con compresor automático de imágenes
 async function uploadMediaFile() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
@@ -224,183 +224,46 @@ async function uploadMediaFile() {
     }
 
     const file = fileInput.files[0];
-    const reader = new FileReader();
-
-    reader.onload = async function(event) {
-        const base64Data = event.target.result;
-        let type = 'image';
-        if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
-            type = 'video';
-        }
-
-        if (!dbData.media) dbData.media = [];
-        dbData.media.push({ 
-            id: Date.now(), 
-            url: base64Data, 
-            type: type, 
-            caption: captionInput || 'Recuerdo especial 💗' 
-        });
-        
-        await saveToCloud();
-        renderEverything();
-
-        fileInput.value = '';
-        document.getElementById('mediaCaption').value = '';
-        alert('¡Foto/Video subido y guardado con éxito en la nube!');
-    };
-
-    reader.readAsDataURL(file);
-}
-
-async function addSong() {
-    const title = document.getElementById('songTitle').value;
-    const addedBy = document.getElementById('songAddedBy').value || 'Amor';
-    const url = document.getElementById('songUrl').value;
-    if (!title || !url) return alert('Llena el título y el enlace');
-    
-    if (!dbData.songs) dbData.songs = [];
-    dbData.songs.push({ title, addedBy, url });
-    
-    await saveToCloud();
-    renderMusicModalList();
-
-    document.getElementById('songTitle').value = '';
-    document.getElementById('songUrl').value = '';
-    alert('¡Canción guardada con éxito!');
-}
-
-async function deleteSong(index) {
-    if (confirm('¿Seguro que deseas eliminar esta canción?')) {
-        dbData.songs.splice(index, 1);
-        await saveToCloud();
-        renderMusicModalList();
+    let type = 'image';
+    if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
+        type = 'video';
     }
-}
 
-async function addMemory() {
-    const text = document.getElementById('memoryText').value;
-    if (!text) return alert('Escribe un texto');
-    
-    if (!dbData.memories) dbData.memories = [];
-    dbData.memories.push(text);
-    
-    await saveToCloud();
-    renderTextsModalList();
-
-    document.getElementById('memoryText').value = '';
-    alert('¡Texto guardado con éxito!');
-}
-
-async function editMemory(index) {
-    const newText = prompt('Edita el texto del momento:', dbData.memories[index]);
-    if (newText !== null && newText.trim() !== '') {
-        dbData.memories[index] = newText.trim();
-        await saveToCloud();
-        renderTextsModalList();
-    }
-}
-
-async function deleteMemory(index) {
-    if (confirm('¿Seguro que deseas eliminar este momento?')) {
-        dbData.memories.splice(index, 1);
-        await saveToCloud();
-        renderTextsModalList();
-    }
-}
-
-// Modales
-function openMusicModal() {
-    renderMusicModalList();
-    document.getElementById('musicModal').classList.remove('hidden');
-}
-function closeMusicModal() {
-    document.getElementById('musicModal').classList.add('hidden');
-}
-
-function openTextsModal() {
-    renderTextsModalList();
-    document.getElementById('textsModal').classList.remove('hidden');
-}
-function closeTextsModal() {
-    document.getElementById('textsModal').classList.add('hidden');
-}
-
-let activeCustomIndex = null;
-
-function openGalleryModal() {
-    const modal = document.getElementById('galleryModal');
-    const grid = document.getElementById('galleryGrid');
-    grid.innerHTML = '';
-
-    if (!dbData.media || dbData.media.length === 0) {
-        grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
+    // Si es video, lo leemos directo; si es imagen, la comprimimos primero
+    if (type === 'video') {
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            await saveMediaToDb(event.target.result, type, captionInput, fileInput);
+        };
+        reader.readAsDataURL(file);
     } else {
-        dbData.media.forEach((item, idx) => {
-            let isVideo = item.type === 'video' || (item.url && item.url.startsWith('data:video'));
-            let thumbHtml = isVideo 
-                ? `<video src="${item.url}" class="gallery-thumb"></video>` 
-                : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
-            
-            grid.innerHTML += `
-                <div class="gallery-card">
-                    <button class="gallery-delete-btn" onclick="deleteCustomMedia(event, ${idx})" title="Eliminar"><i class="fa-solid fa-trash"></i></button>
-                    <div onclick="openViewer('${item.url}', '${item.type || 'image'}', '${item.caption}', ${idx})">
-                        ${thumbHtml}
-                        <div class="gallery-caption">${item.caption}</div>
-                    </div>
-                </div>
-            `;
-        });
-    }
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const maxWidth = 900; // Ancho máximo optimizado para web
 
-    modal.classList.remove('hidden');
-}
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
 
-function closeGalleryModal() {
-    document.getElementById('galleryModal').classList.add('hidden');
-}
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
 
-async function deleteCustomMedia(event, index) {
-    event.stopPropagation();
-    if (confirm('¿Deseas eliminar este archivo de la galería?')) {
-        dbData.media.splice(index, 1);
-        await saveToCloud();
-        initDynamicMedia();
-        openGalleryModal();
+                // Comprimir calidad a 0.75 para que pese poco y suba al instante
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.75);
+                await saveMediaToDb(compressedDataUrl, 'image', captionInput, fileInput);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
     }
 }
 
-function openViewer(url, type, caption, customIndex) {
-    activeCustomIndex = customIndex;
-    const viewerModal = document.getElementById('viewerModal');
-    const container = document.getElementById('viewerContainer');
-    const captionEl = document.getElementById('viewerCaptionText');
-    
-    container.innerHTML = '';
-    if (type === 'video' || (url && url.startsWith('data:video'))) {
-        container.innerHTML = `<video src="${url}" controls autoplay></video>`;
-    } else {
-        container.innerHTML = `<img src="${url}" alt="Ampliada">`;
-    }
-    captionEl.innerText = caption;
-    viewerModal.classList.remove('hidden');
-}
-
-function closeViewerModal() {
-    document.getElementById('viewerModal').classList.add('hidden');
-}
-
-async function enableEditCaption() {
-    if (activeCustomIndex === null) return;
-    const currentCap = dbData.media[activeCustomIndex].caption;
-    const newCap = prompt('Editar texto de la foto/video:', currentCap);
-    if (newCap !== null && newCap.trim() !== '') {
-        dbData.media[activeCustomIndex].caption = newCap.trim();
-        await saveToCloud();
-        document.getElementById('viewerCaptionText').innerText = newCap.trim();
-        openGalleryModal();
-    }
-}
-
-// Cargar todo al abrir la página
-loadFromCloud();
+async function saveMediaToDb(
