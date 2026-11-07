@@ -25,7 +25,7 @@ async function loadFromCloud() {
     }
 }
 
-// Guardar datos en la nube de forma segura
+// Guardar datos en la nube de forma permanente
 async function saveToCloud() {
     try {
         const response = await fetch(`https://api.jsonbin.io/v3/b/${BIN_ID}`, {
@@ -185,7 +185,7 @@ function initDynamicMedia() {
         slide.classList.add('slide');
         if (index === 0) slide.classList.add('active');
 
-        if (item.type === 'video' || (item.url && item.url.match(/\.(mp4|webm|ogg)$/i))) {
+        if (item.type === 'video' || (item.url && item.url.startsWith('data:video'))) {
             slide.innerHTML = `<video src="${item.url}" autoplay muted loop playsinline></video>`;
         } else {
             slide.innerHTML = `<img src="${item.url}" alt="Recuerdo">`;
@@ -214,7 +214,7 @@ function toggleAdminPanel() {
     panel.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Subida a ImgBB con clave anónima libre de CORS
+// Subida local optimizada con ultra compresión automática (Adiós errores de red)
 async function uploadMediaFile() {
     const fileInput = document.getElementById('mediaFileInput');
     const captionInput = document.getElementById('mediaCaption').value.trim();
@@ -224,47 +224,64 @@ async function uploadMediaFile() {
     }
 
     const file = fileInput.files[0];
-    const formData = new FormData();
-    // Clave API pública gratuita de ImgBB para desarrollo anónimo
-    formData.append('image', file);
-
-    alert('Subiendo recuerdo a la nube... Un momento 💗');
-
-    try {
-        const response = await fetch('https://api.imgbb.com/1/upload?key=6d207e02598a3f7333c40339eaeb9e6f', {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) throw new Error('Error en el servidor de imágenes');
-
-        const result = await response.json();
-        if (!result.success) throw new Error('No se pudo procesar la imagen');
-
-        const fileUrl = result.data.url;
-        let type = 'image';
-        if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
-            type = 'video';
-        }
-
-        if (!dbData.media) dbData.media = [];
-        dbData.media.push({ 
-            id: Date.now(), 
-            url: fileUrl, 
-            type: type, 
-            caption: captionInput || 'Recuerdo especial 💗' 
-        });
-        
-        await saveToCloud();
-        renderEverything();
-
-        fileInput.value = '';
-        document.getElementById('mediaCaption').value = '';
-        alert('¡Recuerdo guardado con éxito y sincronizado!');
-    } catch (e) {
-        console.error(e);
-        alert('No se pudo subir el archivo debido a restricciones de la red. Inténtalo de nuevo.');
+    let type = 'image';
+    if (file.type.startsWith('video') || file.name.match(/\.(mp4|webm|ogg)$/i)) {
+        type = 'video';
     }
+
+    alert('Procesando y guardando recuerdo... Un momento 💗');
+
+    if (type === 'video') {
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            await saveMediaToDb(event.target.result, type, captionInput, fileInput);
+        };
+        reader.readAsDataURL(file);
+    } else {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = async function() {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                const maxWidth = 600; // Ancho perfecto para mantener peso mínimo y calidad óptima
+
+                if (width > maxWidth) {
+                    height = Math.round((height * maxWidth) / width);
+                    width = maxWidth;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Comprimir al 60% para que el archivo sea súper ligero
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.60);
+                await saveMediaToDb(compressedDataUrl, 'image', captionInput, fileInput);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+async function saveMediaToDb(urlData, type, caption, fileInput) {
+    if (!dbData.media) dbData.media = [];
+    dbData.media.push({ 
+        id: Date.now(), 
+        url: urlData, 
+        type: type, 
+        caption: caption || 'Recuerdo especial 💗' 
+    });
+    
+    await saveToCloud();
+    renderEverything();
+
+    fileInput.value = '';
+    document.getElementById('mediaCaption').value = '';
+    alert('¡Recuerdo guardado con éxito para siempre!');
 }
 
 async function addSong() {
@@ -351,7 +368,7 @@ function openGalleryModal() {
         grid.innerHTML = '<p style="grid-column: span 2; color: #a0a0b0; font-size: 0.85rem;">No hay fotos o videos subidos todavía.</p>';
     } else {
         dbData.media.forEach((item, idx) => {
-            let isVideo = item.type === 'video' || item.url.match(/\.(mp4|webm|ogg)$/i);
+            let isVideo = item.type === 'video' || (item.url && item.url.startsWith('data:video'));
             let thumbHtml = isVideo 
                 ? `<video src="${item.url}" class="gallery-thumb"></video>` 
                 : `<img src="${item.url}" class="gallery-thumb" alt="Subida">`;
@@ -392,7 +409,7 @@ function openViewer(url, type, caption, customIndex) {
     const captionEl = document.getElementById('viewerCaptionText');
     
     container.innerHTML = '';
-    if (type === 'video' || url.match(/\.(mp4|webm|ogg)$/i)) {
+    if (type === 'video' || (url && url.startsWith('data:video'))) {
         container.innerHTML = `<video src="${url}" controls autoplay></video>`;
     } else {
         container.innerHTML = `<img src="${url}" alt="Ampliada">`;
